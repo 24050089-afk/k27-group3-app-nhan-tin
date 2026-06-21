@@ -5,6 +5,71 @@
 
 ---
 
+## 0. Safe Area — Quy tắc bắt buộc
+
+Mọi screen **phải** xử lý safe area để không bị che bởi notch / Dynamic Island / home indicator.
+
+### Hai trường hợp
+
+| Trường hợp | Cách xử lý |
+|---|---|
+| Screen trong Stack/Tab có header | React Navigation tự xử lý top. Chỉ cần bottom cho ScrollView/FlatList |
+| Screen tự quản lý header (`headerShown: false`) | Phải xử lý cả top lẫn bottom thủ công |
+
+### Pattern chuẩn — dùng `useDevice()`
+
+```js
+import { useDevice } from '@store/DeviceContext';
+
+export default function MyScreen() {
+  const { layout } = useDevice();
+
+  return (
+    <View style={styles.container}>
+      {/* Screen tự quản lý header → thêm safeTop */}
+      <View style={[styles.header, { paddingTop: layout.safeTop + 12 }]}>
+        <Text style={styles.title}>Tiêu đề</Text>
+      </View>
+
+      {/* FlatList → thêm contentPaddingBottom để không bị home indicator che */}
+      <FlatList
+        contentContainerStyle={{ paddingBottom: layout.contentPaddingBottom }}
+        ...
+      />
+    </View>
+  );
+}
+```
+
+### Các giá trị từ `layout`
+
+| Giá trị | Dùng cho |
+|---|---|
+| `layout.safeTop` | paddingTop của header khi `headerShown: false` |
+| `layout.safeBottom` | paddingBottom thủ công (ví dụ fixed footer) |
+| `layout.contentPaddingBottom` | `contentContainerStyle` của FlatList/ScrollView |
+| `layout.screenPaddingH` | paddingHorizontal mặc định theo nhóm thiết bị |
+| `layout.customHeaderH` | Chiều cao header tự build (safeTop + 52) |
+
+### Khi nào dùng `<SafeAreaView>`
+
+Chỉ dùng `SafeAreaView` từ `react-native-safe-area-context` (không phải từ `react-native`) cho auth screens hoặc modal toàn màn hình không có header:
+
+```js
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+// Auth screen (Login / Register) — không có header nào bọc ngoài
+export default function LoginScreen() {
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
+      {/* content */}
+    </SafeAreaView>
+  );
+}
+```
+
+---
+
 ## 1. Template Screen Cơ Bản (đọc dữ liệu)
 
 ```js
@@ -335,6 +400,9 @@ const isOwner = user?.id === item.user_id || user?.role === 'admin';
 ```
 [ ] Đặt tên file đúng: <Tên>Screen.js (PascalCase)
 [ ] Đặt tại src/screens/
+[ ] Safe area: dùng layout.safeTop nếu headerShown: false
+[ ] Safe area: dùng layout.contentPaddingBottom cho FlatList/ScrollView
+[ ] Auth screen không có navigator header → dùng <SafeAreaView> từ react-native-safe-area-context
 [ ] Có loading state (ActivityIndicator)
 [ ] Có error state (hiển thị lỗi rõ ràng)
 [ ] Có empty state nếu là list

@@ -14,6 +14,15 @@
 │  → user, token, login, logout, register, refreshUser   │
 │  → Tất cả screen đều truy cập qua useAuth()            │
 └─────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────┐
+│  Device & Layout State (Context API)                    │
+│  src/store/DeviceContext.js                             │
+│  → insets: { top, bottom, left, right } — safe area    │
+│  → device: { isSmall/isMedium/isLarge/isXLarge, ... }  │
+│  → layout: { safeTop, contentPaddingBottom, ... }       │
+│  → Cập nhật tự động khi xoay màn hình                  │
+│  → Truy cập qua useDevice()                            │
+└─────────────────────────────────────────────────────────┘
                         ↕ Sync với
 ┌─────────────────────────────────────────────────────────┐
 │  Persist Storage (AsyncStorage)                         │

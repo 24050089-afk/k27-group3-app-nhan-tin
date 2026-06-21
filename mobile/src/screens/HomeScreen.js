@@ -12,9 +12,11 @@ import {
 import { getProductsApi } from '../api/product.api';
 import ProductCard from '../components/ProductCard';
 import { useAuth } from '../store/AuthContext';
+import { useDevice } from '../store/DeviceContext';
 
 export default function HomeScreen({ navigation }) {
   const { user } = useAuth();
+  const { layout } = useDevice();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -56,7 +58,7 @@ export default function HomeScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: layout.safeTop + 12 }]}>
         <View>
           <Text style={styles.greeting}>Xin chào, {user?.name} 👋</Text>
           <Text style={styles.subtitle}>Khám phá sản phẩm</Text>
@@ -89,7 +91,7 @@ export default function HomeScreen({ navigation }) {
               onPress={() => navigation.navigate('ProductDetail', { id: item.id })}
             />
           )}
-          contentContainerStyle={styles.list}
+          contentContainerStyle={[styles.list, { paddingBottom: layout.contentPaddingBottom }]}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
           onEndReached={onEndReached}
           onEndReachedThreshold={0.3}
@@ -109,7 +111,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingTop: 20,
     paddingBottom: 12,
     backgroundColor: '#fff',
   },
