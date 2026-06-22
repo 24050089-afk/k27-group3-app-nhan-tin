@@ -1,0 +1,22 @@
+# Expo cache
+.expo/
+
+# Dependencies
+node_modules/
+
+# Native builds
+android/
+ios/
+
+# Logs
+*.log
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# Local env
+.env.local
+.env*.local
+
+# OS
+.DS_Store
