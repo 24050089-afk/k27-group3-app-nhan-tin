@@ -14,9 +14,7 @@ npm-debug.*
 yarn-debug.*
 yarn-error.*
 
-# Local env
-.env.local
-.env*.local
+
 
 # OS
 .DS_Store
