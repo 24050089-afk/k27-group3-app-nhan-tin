@@ -1,25 +1,38 @@
 import React from 'react';
-import {
-  TouchableOpacity,
-  Text,
-  ActivityIndicator,
-  StyleSheet,
-} from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../store/ThemeContext';
 
-export default function Button({ title, onPress, loading, variant = 'primary', style }) {
+export default function Button({ title, onPress, loading, disabled = false, variant = 'primary', icon, style }) {
+  const { colors } = useTheme();
   const isOutline = variant === 'outline';
+  const isDanger = variant === 'danger';
+  const inactive = loading || disabled;
+  const foreground = isOutline ? colors.primary : '#FFFFFF';
 
   return (
     <TouchableOpacity
-      style={[styles.base, isOutline ? styles.outline : styles.primary, style]}
+      style={[
+        styles.base,
+        isOutline
+          ? { backgroundColor: 'transparent', borderWidth: 1.5, borderColor: colors.primary }
+          : { backgroundColor: isDanger ? colors.danger : colors.primary },
+        inactive && { opacity: 0.5 },
+        style,
+      ]}
       onPress={onPress}
-      disabled={loading}
-      activeOpacity={0.8}
+      disabled={inactive}
+      activeOpacity={0.82}
+      accessibilityRole="button"
+      accessibilityState={{ disabled: inactive, busy: loading }}
     >
       {loading ? (
-        <ActivityIndicator color={isOutline ? '#2563EB' : '#fff'} />
+        <ActivityIndicator color={foreground} />
       ) : (
-        <Text style={[styles.text, isOutline && styles.textOutline]}>{title}</Text>
+        <>
+          {icon ? <Ionicons name={icon} size={19} color={foreground} style={styles.icon} /> : null}
+          <Text style={[styles.text, { color: foreground }]}>{title}</Text>
+        </>
       )}
     </TouchableOpacity>
   );
@@ -28,25 +41,15 @@ export default function Button({ title, onPress, loading, variant = 'primary', s
 const styles = StyleSheet.create({
   base: {
     height: 50,
-    borderRadius: 10,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
+    flexDirection: 'row',
     paddingHorizontal: 16,
   },
-  primary: {
-    backgroundColor: '#2563EB',
-  },
-  outline: {
-    backgroundColor: 'transparent',
-    borderWidth: 1.5,
-    borderColor: '#2563EB',
-  },
   text: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 15,
+    fontWeight: '800',
   },
-  textOutline: {
-    color: '#2563EB',
-  },
+  icon: { marginRight: 8 },
 });

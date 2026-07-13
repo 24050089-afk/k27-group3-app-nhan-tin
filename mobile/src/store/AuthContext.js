@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useReducer } from 'react';
 import { loginApi, registerApi, getMeApi } from '../api/auth.api';
+import { connectSocket, disconnectSocket } from '../api/socket';
 import { saveToken, saveUser, clearAuth, getToken, getUser } from '../utils/storage';
 
 const AuthContext = createContext(null);
@@ -31,7 +32,16 @@ export function AuthProvider({ children }) {
       const token = await getToken();
       const user = await getUser();
       if (token && user) {
-        dispatch({ type: 'SET_AUTH', user, token });
+        try {
+          const res = await getMeApi();
+          await saveUser(res.data.user);
+          connectSocket(token);
+          dispatch({ type: 'SET_AUTH', user: res.data.user, token });
+        } catch {
+          disconnectSocket();
+          await clearAuth();
+          dispatch({ type: 'LOGOUT' });
+        }
       } else {
         dispatch({ type: 'SET_LOADING', loading: false });
       }
@@ -42,6 +52,7 @@ export function AuthProvider({ children }) {
     const res = await loginApi({ email, password });
     await saveToken(res.data.token);
     await saveUser(res.data.user);
+    connectSocket(res.data.token);
     dispatch({ type: 'SET_AUTH', user: res.data.user, token: res.data.token });
   };
 
@@ -49,10 +60,12 @@ export function AuthProvider({ children }) {
     const res = await registerApi({ name, email, password });
     await saveToken(res.data.token);
     await saveUser(res.data.user);
+    connectSocket(res.data.token);
     dispatch({ type: 'SET_AUTH', user: res.data.user, token: res.data.token });
   };
 
   const logout = async () => {
+    disconnectSocket();
     await clearAuth();
     dispatch({ type: 'LOGOUT' });
   };

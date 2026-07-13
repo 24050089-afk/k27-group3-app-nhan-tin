@@ -1,0 +1,7 @@
+{"_e":"root:init","_t":1783250311722,"format":"v0-jsonl","version":"57.0.4"}
+{"_e":"env:mode","_t":1783250311723,"nodeEnv":"development","babelEnv":"development","mode":"development"}
+{"_e":"env:load","_t":1783250311729,"mode":"development","files":["../..\\..\\.env"],"env":{"DB_HOST":"localhost","DB_NAME":"lt_web","DB_PASSWORD":"apppassword","DB_PORT":"3306","DB_USER":"appuser","JWT_EXPIRES_IN":"7d","JWT_SECRET":"your_super_secret_jwt_key_change_in_production","PORT":"3000"}}
+{"_e":"devserver:start","_t":1783250316402,"mode":"development","web":true,"baseUrl":"","asyncRoutes":false,"routerRoot":"../..\\..\\app","serverComponents":false,"serverActions":false,"serverRendering":false,"apiRoutes":false,"exporting":false}
+{"_e":"metro:config","_t":1783250316820,"serverRoot":"../..\\..","projectRoot":"../..\\..","exporting":false,"flags":{"autolinkingModuleResolution":false,"serverActions":false,"serverComponents":false,"reactCompiler":false,"optimizeGraph":false,"treeshaking":false,"logbox":false}}
+{"_e":"metro:instantiate","_t":1783250322106,"atlas":false,"workers":8,"host":"::","port":8082}
+{"_e":"metro:client_log","_t":1783250327864,"level":"error","data":["Project is incompatible with this version of Expo Go\n\nThis project requires a newer version of Expo Go.\n\nHow to fix this error:\nDownload the latest version of Expo Go from the Play Store."]}

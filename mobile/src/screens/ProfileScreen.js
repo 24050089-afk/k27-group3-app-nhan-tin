@@ -1,128 +1,142 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  StyleSheet,
-  Alert,
-  TouchableOpacity,
-} from 'react-native';
-import { useAuth } from '../store/AuthContext';
+import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { changePasswordApi } from '../api/auth.api';
-import Input from '../components/Input';
+import BangbooMark from '../components/BangbooMark';
 import Button from '../components/Button';
+import Input from '../components/Input';
+import KeyboardScreen from '../components/KeyboardScreen';
+import ThemeToggle from '../components/ThemeToggle';
+import { useAuth } from '../store/AuthContext';
+import { useTheme } from '../store/ThemeContext';
 
 export default function ProfileScreen() {
-  const { user, logout, refreshUser } = useAuth();
-  const [pwForm, setPwForm] = useState({ current: '', new: '', confirm: '' });
+  const { user, logout } = useAuth();
+  const { colors } = useTheme();
+  const [pwForm, setPwForm] = useState({ current: '', next: '', confirm: '' });
   const [pwErrors, setPwErrors] = useState({});
   const [pwLoading, setPwLoading] = useState(false);
   const [showPwForm, setShowPwForm] = useState(false);
 
-  const set = (key) => (val) => setPwForm((f) => ({ ...f, [key]: val }));
+  const set = (key) => (val) => setPwForm((form) => ({ ...form, [key]: val }));
 
   const validatePw = () => {
-    const e = {};
-    if (!pwForm.current) e.current = 'Nhập mật khẩu hiện tại.';
-    if (pwForm.new.length < 6) e.new = 'Mật khẩu mới tối thiểu 6 ký tự.';
-    if (pwForm.new !== pwForm.confirm) e.confirm = 'Mật khẩu xác nhận không khớp.';
-    setPwErrors(e);
-    return Object.keys(e).length === 0;
+    const errors = {};
+    if (!pwForm.current) errors.current = 'Nhập mật khẩu hiện tại.';
+    if (pwForm.next.length < 6) errors.next = 'Mật khẩu mới cần ít nhất 6 ký tự.';
+    if (pwForm.next !== pwForm.confirm) errors.confirm = 'Mật khẩu xác nhận không khớp.';
+    setPwErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
   const handleChangePassword = async () => {
     if (!validatePw()) return;
     setPwLoading(true);
     try {
-      await changePasswordApi({ currentPassword: pwForm.current, newPassword: pwForm.new });
-      Alert.alert('Thành công', 'Đổi mật khẩu thành công.');
-      setPwForm({ current: '', new: '', confirm: '' });
+      await changePasswordApi({ currentPassword: pwForm.current, newPassword: pwForm.next });
+      Alert.alert('Đã đổi mật khẩu', 'Mật khẩu mới có hiệu lực ngay.');
+      setPwForm({ current: '', next: '', confirm: '' });
       setShowPwForm(false);
     } catch (err) {
-      Alert.alert('Lỗi', err.message);
+      Alert.alert('Không thể đổi mật khẩu', err.message);
     } finally {
       setPwLoading(false);
     }
   };
 
   const handleLogout = () => {
-    Alert.alert('Đăng xuất', 'Bạn có chắc muốn đăng xuất?', [
+    Alert.alert('Đăng xuất', 'Bạn có chắc muốn đăng xuất khỏi thiết bị này?', [
       { text: 'Hủy', style: 'cancel' },
       { text: 'Đăng xuất', style: 'destructive', onPress: logout },
     ]);
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <View style={styles.avatarCircle}>
-        <Text style={styles.avatarText}>{user?.name?.[0]?.toUpperCase()}</Text>
+    <KeyboardScreen
+      style={[styles.container, { backgroundColor: colors.background }]}
+      contentContainerStyle={styles.content}
+      extraBottomSpace={40}
+    >
+      <View style={[styles.hero, { borderBottomColor: colors.border }]}>
+        <BangbooMark size={76} label="PROXY" />
+        <Text style={[styles.name, { color: colors.text }]}>{user?.name || 'Người dùng'}</Text>
+        <Text style={[styles.email, { color: colors.textMuted }]}>{user?.email}</Text>
+        <View style={[styles.statusPill, { backgroundColor: colors.primarySoft }]}>
+          <Text style={[styles.statusText, { color: colors.primary }]}>
+            {user?.is_online ? 'Đang hoạt động' : 'Sẵn sàng'}
+          </Text>
+        </View>
       </View>
 
-      <Text style={styles.name}>{user?.name}</Text>
-      <Text style={styles.email}>{user?.email}</Text>
-      <View style={styles.roleBadge}>
-        <Text style={styles.roleText}>{user?.role === 'admin' ? 'Quản trị viên' : 'Người dùng'}</Text>
+      <Text style={[styles.groupLabel, { color: colors.textMuted }]}>TÙY CHỌN</Text>
+      <View style={[styles.section, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <View style={styles.row}>
+          <View style={[styles.settingIcon, { backgroundColor: colors.primarySoft }]}>
+            <Ionicons name="contrast-outline" size={20} color={colors.primary} />
+          </View>
+          <View style={styles.settingCopy}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Giao diện</Text>
+            <Text style={[styles.sectionNote, { color: colors.textMuted }]}>Chế độ sáng hoặc tối</Text>
+          </View>
+          <ThemeToggle />
+        </View>
       </View>
 
-      <View style={styles.section}>
-        <TouchableOpacity
-          style={styles.menuItem}
-          onPress={() => setShowPwForm((v) => !v)}
-        >
-          <Text style={styles.menuText}>🔑  Đổi mật khẩu</Text>
-          <Text style={styles.menuArrow}>{showPwForm ? '▲' : '▼'}</Text>
+      <View style={[styles.section, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <TouchableOpacity style={styles.menuItem} onPress={() => setShowPwForm((value) => !value)}>
+          <View style={[styles.settingIcon, { backgroundColor: colors.primarySoft }]}>
+            <Ionicons name="key-outline" size={20} color={colors.primary} />
+          </View>
+          <Text style={[styles.menuText, { color: colors.text }]}>Đổi mật khẩu</Text>
+          <Ionicons name={showPwForm ? 'chevron-up' : 'chevron-down'} size={20} color={colors.textMuted} />
         </TouchableOpacity>
 
         {showPwForm && (
           <View style={styles.pwForm}>
             <Input label="Mật khẩu hiện tại" value={pwForm.current} onChangeText={set('current')} secureTextEntry error={pwErrors.current} />
-            <Input label="Mật khẩu mới" value={pwForm.new} onChangeText={set('new')} secureTextEntry error={pwErrors.new} />
+            <Input label="Mật khẩu mới" value={pwForm.next} onChangeText={set('next')} secureTextEntry error={pwErrors.next} />
             <Input label="Xác nhận mật khẩu mới" value={pwForm.confirm} onChangeText={set('confirm')} secureTextEntry error={pwErrors.confirm} />
-            <Button title="Xác nhận đổi mật khẩu" onPress={handleChangePassword} loading={pwLoading} />
+            <Button title="Lưu mật khẩu" icon="checkmark" onPress={handleChangePassword} loading={pwLoading} />
           </View>
         )}
       </View>
 
-      <Button
-        title="Đăng xuất"
-        onPress={handleLogout}
-        variant="outline"
-        style={styles.logoutBtn}
-      />
-    </ScrollView>
+      <Button title="Đăng xuất" icon="log-out-outline" onPress={handleLogout} variant="danger" style={styles.logoutBtn} />
+    </KeyboardScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F9FAFB' },
-  content: { alignItems: 'center', padding: 24, paddingTop: 40 },
-  avatarCircle: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    backgroundColor: '#2563EB',
-    justifyContent: 'center',
+  container: { flex: 1 },
+  content: { padding: 16, paddingTop: 28 },
+  hero: {
     alignItems: 'center',
-    marginBottom: 12,
-  },
-  avatarText: { fontSize: 36, fontWeight: '700', color: '#fff' },
-  name: { fontSize: 22, fontWeight: '700', color: '#111827' },
-  email: { fontSize: 14, color: '#6B7280', marginTop: 4, marginBottom: 10 },
-  roleBadge: {
-    backgroundColor: '#EFF6FF',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 20,
-    marginBottom: 28,
-  },
-  roleText: { color: '#2563EB', fontWeight: '600', fontSize: 13 },
-  section: {
-    width: '100%',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    overflow: 'hidden',
+    borderBottomWidth: 1,
+    paddingVertical: 22,
+    paddingHorizontal: 16,
     marginBottom: 16,
   },
+  name: { fontSize: 23, fontWeight: '900', marginTop: 14 },
+  email: { fontSize: 14, marginTop: 4 },
+  statusPill: { marginTop: 12, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 5 },
+  statusText: { fontSize: 12, fontWeight: '900' },
+  groupLabel: { fontSize: 11, fontWeight: '800', marginBottom: 7, marginLeft: 2 },
+  section: {
+    borderWidth: 1,
+    borderRadius: 10,
+    overflow: 'hidden',
+    marginBottom: 14,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+  },
+  settingIcon: { width: 36, height: 36, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
+  settingCopy: { flex: 1, marginLeft: 11 },
+  sectionTitle: { fontSize: 16, fontWeight: '900' },
+  sectionNote: { fontSize: 13, marginTop: 3 },
   menuItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -130,8 +144,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 16,
   },
-  menuText: { fontSize: 15, color: '#111827' },
-  menuArrow: { color: '#9CA3AF' },
+  menuText: { flex: 1, fontSize: 15, fontWeight: '800', marginLeft: 11 },
   pwForm: { paddingHorizontal: 16, paddingBottom: 16 },
-  logoutBtn: { width: '100%', marginTop: 8 },
+  logoutBtn: { marginTop: 4 },
 });

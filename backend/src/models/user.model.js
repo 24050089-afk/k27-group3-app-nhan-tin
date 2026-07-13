@@ -20,6 +20,16 @@ const User = sequelize.define(
       unique: true,
       validate: { isEmail: true },
     },
+    phone: {
+      type: DataTypes.STRING(30),
+      allowNull: true,
+      unique: true,
+    },
+    username: {
+      type: DataTypes.STRING(60),
+      allowNull: true,
+      unique: true,
+    },
     password: {
       type: DataTypes.STRING,
       allowNull: false,
@@ -31,6 +41,19 @@ const User = sequelize.define(
     role: {
       type: DataTypes.ENUM('user', 'admin'),
       defaultValue: 'user',
+    },
+    bio: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+    },
+    last_seen_at: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+    is_online: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
     },
   },
   {

@@ -64,8 +64,9 @@ Bao gồm: khởi chạy Expo, Expo Go, debug tools, Fast Refresh, API URL auto-
 #### Tôi cần hiểu tính năng User (CRUD người dùng / phân quyền)
 → Đọc: [features/user.md](features/user.md)
 
-#### Tôi cần hiểu tính năng Product (CRUD sản phẩm / ownership)
-→ Đọc: [features/product.md](features/product.md)
+#### Tôi cần hiểu tính năng Messaging
+→ Đọc: [features/messaging.md](features/messaging.md)
+Bao gồm: social, conversation, message, realtime, seen, reaction và upload ảnh.
 
 #### Tôi cần kiểm tra bảo mật trước khi viết endpoint mới
 → Đọc: [skills/security-checklist.md](skills/security-checklist.md)  

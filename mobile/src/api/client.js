@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { getToken } from '../utils/storage';
+import { clearAuth, getToken } from '../utils/storage';
 import { API_BASE_URL } from '../utils/env';
 import { networkLogger } from '../utils/networkLogger';
 
@@ -28,7 +28,7 @@ client.interceptors.response.use(
       networkLogger.add({
         id: response.config._logId,
         method: (response.config.method || 'GET').toUpperCase(),
-        url: response.config.url,
+        url: `${response.config.baseURL || ''}${response.config.url || ''}`,
         status: response.status,
         duration: Date.now() - (response.config._startTime || Date.now()),
         size: body.length,
@@ -39,11 +39,15 @@ client.interceptors.response.use(
     return response.data;
   },
   (error) => {
+    if (error.response?.status === 401) {
+      clearAuth().catch(() => {});
+    }
+
     if (__DEV__) {
       networkLogger.add({
         id: error.config?._logId || networkLogger.nextId(),
         method: (error.config?.method || 'GET').toUpperCase(),
-        url: error.config?.url || '',
+        url: `${error.config?.baseURL || ''}${error.config?.url || ''}`,
         status: error.response?.status || 0,
         duration: Date.now() - (error.config?._startTime || Date.now()),
         size: 0,
@@ -51,8 +55,15 @@ client.interceptors.response.use(
         ok: false,
       });
     }
+
+    const timedOut = error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT';
     const message =
-      error.response?.data?.message || 'Có lỗi xảy ra, vui lòng thử lại.';
+      error.response?.data?.message ||
+      (timedOut
+        ? 'Yêu cầu mất quá nhiều thời gian. Kiểm tra mạng rồi thử lại.'
+        : error.request
+          ? `Không kết nối được API: ${API_BASE_URL}`
+          : 'Không thể gửi yêu cầu. Vui lòng thử lại.');
     return Promise.reject(new Error(message));
   }
 );

@@ -23,10 +23,10 @@ const getById = async (req, res, next) => {
 
 const updateProfile = async (req, res, next) => {
   try {
-    const { name, avatar } = req.body;
+    const { name, avatar, phone, username, bio } = req.body;
     const user = await User.findByPk(req.user.id);
 
-    await user.update({ name, avatar });
+    await user.update({ name, avatar, phone, username, bio });
 
     res.json({ success: true, data: user, message: 'Cập nhật thành công.' });
   } catch (error) {

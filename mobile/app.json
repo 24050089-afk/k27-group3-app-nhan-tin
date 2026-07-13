@@ -5,21 +5,41 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.ltweb.mobile"
+      "bundleIdentifier": "com.ltweb.mobile",
+      "infoPlist": {
+        "NSAppTransportSecurity": {
+          "NSAllowsLocalNetworking": true
+        }
+      }
     },
     "android": {
+      "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {
         "backgroundColor": "#2563EB"
       },
       "package": "com.ltweb.mobile"
     },
     "extra": {
+      "apiPort": 4000,
       "eas": {
         "projectId": "your-eas-project-id"
       }
-    }
+    },
+    "plugins": [
+      "expo-font",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Cho phép LT Web truy cập thư viện ảnh để gửi ảnh trong cuộc trò chuyện.",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
+      ]
+    ]
   }
 }

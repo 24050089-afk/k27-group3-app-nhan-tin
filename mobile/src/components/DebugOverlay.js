@@ -6,13 +6,14 @@ import {
   FlatList,
   TouchableOpacity,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   Platform,
   Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Clipboard from 'expo-clipboard';
 import { networkLogger } from '../utils/networkLogger';
+import { API_BASE_URL } from '../utils/env';
 
 const METHOD_COLORS = {
   GET: '#3B82F6',
@@ -96,7 +97,10 @@ export default function DebugOverlay() {
       <Modal visible={visible} animationType="slide" onRequestClose={() => setVisible(false)}>
         <SafeAreaView style={styles.modal}>
           <View style={styles.header}>
-            <Text style={styles.headerTitle}>Network  ({logs.length})</Text>
+            <View style={styles.headerTextBlock}>
+              <Text style={styles.headerTitle}>Network  ({logs.length})</Text>
+              <Text style={styles.baseUrl} numberOfLines={1}>{API_BASE_URL}</Text>
+            </View>
             <View style={styles.headerActions}>
               <TouchableOpacity
                 style={styles.headerBtn}
@@ -170,6 +174,8 @@ const styles = StyleSheet.create({
     borderBottomColor: '#1E293B',
   },
   headerTitle: { color: '#F1F5F9', fontSize: 16, fontWeight: '700' },
+  headerTextBlock: { flex: 1, paddingRight: 12 },
+  baseUrl: { color: '#64748B', fontSize: 11, marginTop: 2 },
   headerActions: { flexDirection: 'row', gap: 8 },
   headerBtn: {
     paddingHorizontal: 14,

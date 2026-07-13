@@ -1,32 +1,27 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-} from 'react-native';
-import { useAuth } from '../store/AuthContext';
-import Input from '../components/Input';
+import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import BangbooMark from '../components/BangbooMark';
 import Button from '../components/Button';
+import Input from '../components/Input';
+import KeyboardScreen from '../components/KeyboardScreen';
+import { useAuth } from '../store/AuthContext';
+import { useTheme } from '../store/ThemeContext';
 
 export default function LoginScreen({ navigation }) {
   const { login } = useAuth();
+  const { colors } = useTheme();
   const [form, setForm] = useState({ email: '', password: '' });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
 
-  const set = (key) => (val) => setForm((f) => ({ ...f, [key]: val }));
+  const set = (key) => (value) => setForm((current) => ({ ...current, [key]: value }));
 
   const validate = () => {
-    const e = {};
-    if (!form.email) e.email = 'Vui lòng nhập email.';
-    if (!form.password) e.password = 'Vui lòng nhập mật khẩu.';
-    setErrors(e);
-    return Object.keys(e).length === 0;
+    const next = {};
+    if (!form.email) next.email = 'Nhập email để đăng nhập.';
+    if (!form.password) next.password = 'Nhập mật khẩu để tiếp tục.';
+    setErrors(next);
+    return Object.keys(next).length === 0;
   };
 
   const handleLogin = async () => {
@@ -35,69 +30,47 @@ export default function LoginScreen({ navigation }) {
     try {
       await login(form.email.trim(), form.password);
     } catch (err) {
-      Alert.alert('Đăng nhập thất bại', err.message);
+      Alert.alert('Không thể đăng nhập', `${err.message}\n\nKiểm tra thông tin hoặc kết nối rồi thử lại.`);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-        <Text style={styles.title}>Chào mừng trở lại</Text>
-        <Text style={styles.subtitle}>Đăng nhập để tiếp tục</Text>
+    <KeyboardScreen style={{ backgroundColor: colors.background }} contentContainerStyle={styles.container}>
+        <View style={styles.brand}>
+          <BangbooMark size={76} label="BANGBOO NET" />
+          <Text style={[styles.title, { color: colors.text }]}>Đăng nhập</Text>
+          <Text style={[styles.subtitle, { color: colors.textMuted }]}>Tiếp tục các cuộc trò chuyện của bạn.</Text>
+        </View>
 
-        <Input
-          label="Email"
-          value={form.email}
-          onChangeText={set('email')}
-          placeholder="example@email.com"
-          keyboardType="email-address"
-          error={errors.email}
-        />
-        <Input
-          label="Mật khẩu"
-          value={form.password}
-          onChangeText={set('password')}
-          placeholder="••••••••"
-          secureTextEntry
-          error={errors.password}
-        />
-
-        <Button title="Đăng nhập" onPress={handleLogin} loading={loading} style={styles.btn} />
+        <View style={[styles.panel, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Input label="Email" value={form.email} onChangeText={set('email')} placeholder="example@email.com" keyboardType="email-address" error={errors.email} />
+          <Input label="Mật khẩu" value={form.password} onChangeText={set('password')} placeholder="Nhập mật khẩu" secureTextEntry error={errors.password} returnKeyType="done" onSubmitEditing={handleLogin} />
+          <TouchableOpacity style={styles.forgotLink} onPress={() => navigation.navigate('ForgotPassword')}>
+            <Text style={[styles.forgotText, { color: colors.primary }]}>Quên mật khẩu?</Text>
+          </TouchableOpacity>
+          <Button title="Đăng nhập" icon="log-in-outline" onPress={handleLogin} loading={loading} style={styles.btn} />
+        </View>
 
         <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-          <Text style={styles.link}>
-            Chưa có tài khoản? <Text style={styles.linkBold}>Đăng ký</Text>
+          <Text style={[styles.link, { color: colors.textMuted }]}>
+            Chưa có tài khoản? <Text style={{ color: colors.primary, fontWeight: '900' }}>Đăng ký</Text>
           </Text>
         </TouchableOpacity>
-      </ScrollView>
-    </KeyboardAvoidingView>
+    </KeyboardScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    padding: 24,
-    backgroundColor: '#fff',
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#111827',
-    marginBottom: 6,
-  },
-  subtitle: {
-    fontSize: 15,
-    color: '#6B7280',
-    marginBottom: 32,
-  },
-  btn: { marginTop: 8, marginBottom: 20 },
-  link: { textAlign: 'center', color: '#6B7280', fontSize: 14 },
-  linkBold: { color: '#2563EB', fontWeight: '600' },
+  root: { flex: 1 },
+  container: { flexGrow: 1, justifyContent: 'center', padding: 20 },
+  brand: { alignItems: 'center', marginBottom: 22 },
+  title: { fontSize: 28, fontWeight: '900', marginTop: 18, textAlign: 'center' },
+  subtitle: { fontSize: 15, marginTop: 6, textAlign: 'center' },
+  panel: { width: '100%', maxWidth: 480, alignSelf: 'center', paddingTop: 4 },
+  forgotLink: { alignSelf: 'flex-end', marginBottom: 12 },
+  forgotText: { fontSize: 13, fontWeight: '900' },
+  btn: { marginTop: 8 },
+  link: { textAlign: 'center', fontSize: 14, marginTop: 18 },
 });

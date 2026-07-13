@@ -1,6 +1,6 @@
 const express = require('express');
 const { body } = require('express-validator');
-const { register, login, getMe, changePassword } = require('../controllers/auth.controller');
+const { register, login, getMe, changePassword, forgotPassword, logout } = require('../controllers/auth.controller');
 const { protect } = require('../middlewares/auth.middleware');
 const validate = require('../middlewares/validate.middleware');
 
@@ -26,6 +26,19 @@ router.post(
 );
 
 router.get('/me', protect, getMe);
+router.post('/logout', protect, logout);
+
+router.post(
+  '/forgot-password',
+  validate([
+    body('email').isEmail().withMessage('Email khong hop le.'),
+    body('newPassword').isLength({ min: 6 }).withMessage('Mat khau moi toi thieu 6 ky tu.'),
+    body('confirmPassword')
+      .custom((value, { req }) => value === req.body.newPassword)
+      .withMessage('Xac nhan mat khau khong khop.'),
+  ]),
+  forgotPassword
+);
 
 router.patch(
   '/change-password',

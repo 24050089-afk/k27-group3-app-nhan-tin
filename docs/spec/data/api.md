@@ -1,181 +1,73 @@
 # API Contracts
 
-> Bỏ vào đây: contract giữa FE và BE — endpoint, method, auth, request body, response.  
-> Paste từ Postman, Swagger, Insomnia, hoặc mô tả tay.  
-> AI đọc file này để tạo đồng thời: BE router/controller + FE api function.
+Nguon su that: `backend/src/routers/*.router.js`. Base URL development: `http://<LAN_HOST>:4000/api`.
 
----
+## Auth
 
-## TEMPLATE — Copy block này cho endpoint mới
+| Method | Path | Auth | Body chinh |
+|---|---|---|---|
+| POST | `/auth/register` | Public | `name`, `email`, `password` (min 6) |
+| POST | `/auth/login` | Public | `email`, `password` |
+| GET | `/auth/me` | Protected | - |
+| POST | `/auth/logout` | Protected | - |
+| POST | `/auth/forgot-password` | Public | `email`, `newPassword`, `confirmPassword` |
+| PATCH | `/auth/change-password` | Protected | `currentPassword`, `newPassword` |
 
-```
-## [Tên hành động]
+## Users
 
-**Method + Path**: `[METHOD] /api/[path]`
-**Auth**         : Public | Protected (JWT) | Admin only
-**Validate**     : [danh sách field cần validate]
+| Method | Path | Auth | Body/query chinh |
+|---|---|---|---|
+| GET | `/users` | Admin | Pagination theo controller |
+| GET | `/users/:id` | Protected | - |
+| PATCH | `/users/me` | Protected | `name?`, `avatar?` |
+| DELETE | `/users/:id` | Admin | - |
 
-### Request Body
-```json
-{
-  "field": "kiểu — mô tả"
-}
-```
+## Social
 
-### Response 200
-```json
-{
-  "success": true,
-  "data": { ... },
-  "message": "..."
-}
-```
+| Method | Path | Auth | Body/query chinh |
+|---|---|---|---|
+| GET | `/social/users/search?search=...` | Protected | `search` |
+| GET | `/social/friends` | Protected | - |
+| GET | `/social/requests` | Protected | - |
+| POST | `/social/requests` | Protected | `friend_id` |
+| PATCH | `/social/requests/:id` | Protected | `status: accepted|rejected` |
+| POST | `/social/blocks` | Protected | `blocked_user_id` |
+| DELETE | `/social/blocks/:id` | Protected | - |
 
-### Response lỗi
-| Status | Trường hợp |
-|---|---|
-| 400 | [lý do] |
-| 401 | Thiếu / sai token |
-| 403 | Không có quyền |
-| 404 | Không tìm thấy |
-| 422 | Validation fail |
-```
+## Conversations
 
----
+| Method | Path | Auth | Body/query chinh |
+|---|---|---|---|
+| GET | `/conversations` | Protected | - |
+| GET | `/conversations/:id` | Protected + member | - |
+| POST | `/conversations/private` | Protected | `friend_id` |
+| POST | `/conversations/groups` | Protected | `name`, `member_ids` (min 2) |
+| PATCH | `/conversations/:id` | Protected + group admin | `name?`, `avatar?` |
+| PATCH | `/conversations/:id/settings` | Protected + member | `muted?`, `pinned?` |
+| DELETE | `/conversations/:id/members/me` | Protected + member | - |
+| GET | `/conversations/:conversationId/messages` | Protected + member | `page?`, `limit?` |
+| POST | `/conversations/:conversationId/messages` | Protected + member | `content?`, `type?`, `reply_to_id?`, `attachments?` |
+| PATCH | `/conversations/:conversationId/seen` | Protected + member | - |
 
-## ENDPOINTS HIỆN CÓ
+## Messages
 
----
+| Method | Path | Auth | Body chinh |
+|---|---|---|---|
+| PATCH | `/messages/:id` | Protected + sender | `content` (max 4000) |
+| PATCH | `/messages/:id/recall` | Protected + sender/admin | - |
+| POST | `/messages/:id/reactions` | Protected + member | `type` (max 32) |
+| DELETE | `/messages/:id/reactions/me` | Protected + member | - |
 
-### Auth
+## Upload Anh Chat
 
-#### Đăng ký
-**Method + Path**: `POST /api/auth/register`  
-**Auth**: Public  
-**Validate**: `name` notEmpty, `email` isEmail, `password` minLength(6)
+`POST /upload/chat-image` dung `multipart/form-data`, field `image`, Protected.
 
-**Request Body**
-```json
-{ "name": "string", "email": "string", "password": "string" }
-```
-**Response 201**
-```json
-{ "success": true, "data": { "user": { User }, "token": "jwt" }, "message": "Đăng ký thành công" }
-```
+- Chi chap nhan MIME `image/*`.
+- Gioi han 10 MB; vuot gioi han tra `413`.
+- Response `201`: `{ "success": true, "data": { "file_url": "...", "file_type": "image/jpeg", "size": 0, "thumbnail_url": "..." } }`.
 
----
+## Response Chung
 
-#### Đăng nhập
-**Method + Path**: `POST /api/auth/login`  
-**Auth**: Public
-
-**Request Body**
-```json
-{ "email": "string", "password": "string" }
-```
-**Response 200**
-```json
-{ "success": true, "data": { "user": { User }, "token": "jwt" }, "message": "Đăng nhập thành công" }
-```
-
----
-
-#### Lấy thông tin bản thân
-**Method + Path**: `GET /api/auth/me`  
-**Auth**: Protected
-
-**Response 200**
-```json
-{ "success": true, "data": { "user": { User } } }
-```
-
----
-
-#### Đổi mật khẩu
-**Method + Path**: `PATCH /api/auth/change-password`  
-**Auth**: Protected
-
-**Request Body**
-```json
-{ "currentPassword": "string", "newPassword": "string (min 6)" }
-```
-
----
-
-### Users
-
-#### Danh sách người dùng
-**Method + Path**: `GET /api/users`  
-**Auth**: Admin only
-
-**Response 200**
-```json
-{ "success": true, "data": [{ User }], "meta": { "total": 0, "page": 1, "limit": 10, "totalPages": 1 } }
-```
-
----
-
-#### Cập nhật hồ sơ
-**Method + Path**: `PATCH /api/users/me`  
-**Auth**: Protected
-
-**Request Body**
-```json
-{ "name": "string?", "avatar": "string?" }
-```
-
----
-
-### Products
-
-#### Danh sách sản phẩm (public, có search + phân trang)
-**Method + Path**: `GET /api/products?page=1&limit=10&search=`  
-**Auth**: Public
-
-**Response 200**
-```json
-{
-  "success": true,
-  "data": [{ "id": 1, "name": "", "price": 0, "stock": 0, "image_url": "", "owner": { "id": 1, "name": "" } }],
-  "meta": { "total": 0, "page": 1, "limit": 10, "totalPages": 1 }
-}
-```
-
----
-
-#### Sản phẩm của tôi
-**Method + Path**: `GET /api/products/my`  
-**Auth**: Protected
-
----
-
-#### Chi tiết sản phẩm
-**Method + Path**: `GET /api/products/:id`  
-**Auth**: Public
-
----
-
-#### Tạo sản phẩm
-**Method + Path**: `POST /api/products`  
-**Auth**: Protected
-
-**Request Body**
-```json
-{ "name": "string", "price": 0, "stock": 0, "description": "string?", "image_url": "string?" }
-```
-
----
-
-#### Cập nhật sản phẩm
-**Method + Path**: `PUT /api/products/:id`  
-**Auth**: Protected + Ownership check
-
----
-
-#### Xóa sản phẩm
-**Method + Path**: `DELETE /api/products/:id`  
-**Auth**: Protected + Ownership check
-
----
-
-<!-- THÊM ENDPOINT MỚI VÀO ĐÂY -->
+- Thanh cong: `{ success: true, data?, message?, meta? }`.
+- Loi: `{ success: false, message, errors? }`.
+- `401`: thieu/sai token; `403`: khong du quyen; `404`: khong tim thay/khong phai member; `422`: validation.

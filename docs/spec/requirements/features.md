@@ -48,34 +48,6 @@ Người dùng tạo tài khoản hoặc đăng nhập. JWT được lưu local 
 
 ---
 
-## Xem danh sách sản phẩm
-
-**Độ ưu tiên**: P0  
-**Scope**: BE + FE  
-**Status**: DONE
-
-### Acceptance Criteria
-- [x] Hiển thị list sản phẩm có ảnh, tên, giá, tồn kho
-- [x] Tìm kiếm theo tên
-- [x] Phân trang vô hạn (load more khi scroll)
-- [x] Pull-to-refresh
-
----
-
-## CRUD Sản phẩm
-
-**Độ ưu tiên**: P0  
-**Scope**: BE + FE  
-**Status**: DONE
-
-### Acceptance Criteria
-- [x] Tạo sản phẩm (authenticated)
-- [x] Xem chi tiết
-- [x] Sửa (chỉ chủ sở hữu + admin)
-- [x] Xóa (chỉ chủ sở hữu + admin)
-
----
-
 ## Hồ sơ cá nhân
 
 **Độ ưu tiên**: P1  
@@ -89,4 +61,24 @@ Người dùng tạo tài khoản hoặc đăng nhập. JWT được lưu local 
 
 ---
 
-<!-- THÊM TÍNH NĂNG MỚI VÀO ĐÂY -->
+## Messaging Core
+
+**Do uu tien**: P0
+**Scope**: BE + FE
+**Status**: IMPLEMENTED
+
+### Mo ta
+Nguoi dung dang nhap co the tim nguoi dung, gui/nhan loi moi ket ban, tao chat rieng hoac nhom, gui tin nhan van ban, thu hoi tin nhan va tha reaction.
+
+### Acceptance Criteria
+- [x] Co model cho ban be, chan nguoi dung, cuoc tro chuyen, thanh vien, tin nhan, attachment, trang thai tin nhan, reaction, notification.
+- [x] Co endpoint protected cho social, conversations va messages.
+- [x] Mobile co tab Chats, Friends, Profile.
+- [x] Mobile co man hinh danh sach chat, noi dung chat, tao chat, danh ba.
+- [x] Tin nhan chi xem/gui duoc khi user la thanh vien conversation.
+- [x] Co the chon anh tu thu vien, upload len backend va gui anh trong chat.
+
+### Ghi chu ky thuat
+- Dung Socket.IO cho message va seen realtime; khong polling dinh ky trong `ChatScreen`.
+- Su kien `conversation:seen` chi cap nhat state local va backend chi emit khi status thuc su thay doi, tranh feedback loop API.
+- Da co upload binary cho anh chat; video/file chua duoc implement.
