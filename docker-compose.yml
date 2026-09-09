@@ -5,11 +5,11 @@ services:
     image: mysql:8.0
     container_name: lt_db
     restart: unless-stopped
+    env_file:
+      - ./backend/.env
     environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
       MYSQL_DATABASE: lt_web
       MYSQL_USER: appuser
-      MYSQL_PASSWORD: apppassword
     ports:
       # Host-only access for database clients such as TablePlus.
       # Backend still connects to db:3306 inside the Docker network.
@@ -19,7 +19,7 @@ services:
     networks:
       - app-network
     healthcheck:
-      test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost', '-u', 'root', '-prootpassword']
+      test: ['CMD-SHELL', 'mysqladmin ping -h localhost -uroot -p"$${MYSQL_ROOT_PASSWORD}" --silent']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -39,7 +39,6 @@ services:
       DB_PORT: 3306
       DB_NAME: lt_web
       DB_USER: appuser
-      DB_PASSWORD: apppassword
     depends_on:
       db:
         condition: service_healthy
