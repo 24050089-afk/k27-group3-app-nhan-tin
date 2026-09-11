@@ -1,13 +1,21 @@
 const { Op } = require('sequelize');
 const {
   User,
-  Friendship,
   BlockedUser,
   Conversation,
   ConversationMember,
   Message,
   Reaction,
+  ConversationPermission,
+  sequelize,
 } = require('../models');
+const { sortConversationsByActivity } = require('../utils/conversationOrder');
+const { findOrCreatePrivateConversation } = require('../services/privateConversation.service');
+const { createNotificationEvent, enabled: notificationsEnabled } = require('../services/notification.service');
+const { emitUserEvent, removeUserFromConversation } = require('../socket');
+const { canMutateConversation, isGroupOwner } = require('../utils/conversationAuthorization');
+const { decorateConversations, lockConversationAccess } = require('../services/groupPermission.service');
+const { defaultPolicy, domainError } = require('../utils/groupPermissions');
 
 const userAttrs = ['id', 'name', 'email', 'phone', 'username', 'avatar', 'is_online', 'last_seen_at'];
 
@@ -74,13 +82,14 @@ const listConversations = async (req, res, next) => {
     const membershipMap = new Map(memberships.map((item) => [item.conversation_id, item]));
     const data = conversations.map((conversation) => {
       const plain = conversation.toJSON();
-      plain.me = membershipMap.get(conversation.id);
+      const membership = membershipMap.get(conversation.id);
+      plain.me = membership?.toJSON ? membership.toJSON() : membership || null;
       plain.last_message = plain.messages?.[0] || null;
       delete plain.messages;
       return plain;
     });
 
-    res.json({ success: true, data });
+    res.json({ success: true, data: sortConversationsByActivity(await decorateConversations(data, req.user.id)) });
   } catch (error) {
     next(error);
   }
@@ -94,7 +103,8 @@ const getConversation = async (req, res, next) => {
     }
 
     const conversation = await getConversationPayload(req.params.id);
-    res.json({ success: true, data: conversation });
+    if (!conversation) throw domainError(404, 'CONVERSATION_NOT_FOUND', 'Không tìm thấy cuộc trò chuyện.');
+    res.json({ success: true, data: (await decorateConversations([conversation], req.user.id))[0] });
   } catch (error) {
     next(error);
   }
@@ -117,41 +127,11 @@ const createPrivateConversation = async (req, res, next) => {
       return res.status(403).json({ success: false, message: 'Khong the tao chat vi co chan nguoi dung.' });
     }
 
-    const accepted = await Friendship.findOne({
-      where: {
-        status: 'accepted',
-        [Op.or]: [
-          { user_id: req.user.id, friend_id: friendId },
-          { user_id: friendId, friend_id: req.user.id },
-        ],
-      },
+    const { conversation, created } = await findOrCreatePrivateConversation(req.user.id, friendId);
+    res.status(created ? 201 : 200).json({
+      success: true,
+      data: await getConversationPayload(conversation.id),
     });
-    if (!accepted) {
-      return res.status(403).json({ success: false, message: 'Chi co the tao chat rieng voi ban be.' });
-    }
-
-    const myMemberships = await ConversationMember.findAll({ where: { user_id: req.user.id } });
-    const candidateIds = myMemberships.map((item) => item.conversation_id);
-    const existing = await Conversation.findOne({
-      where: { id: candidateIds, type: 'private' },
-      include: [{
-        model: ConversationMember,
-        as: 'members',
-        where: { user_id: friendId },
-      }],
-    });
-
-    if (existing) {
-      return res.json({ success: true, data: await getConversationPayload(existing.id) });
-    }
-
-    const conversation = await Conversation.create({ type: 'private', created_by: req.user.id });
-    await ConversationMember.bulkCreate([
-      { conversation_id: conversation.id, user_id: req.user.id, role: 'admin' },
-      { conversation_id: conversation.id, user_id: friendId, role: 'member' },
-    ]);
-
-    res.status(201).json({ success: true, data: await getConversationPayload(conversation.id) });
   } catch (error) {
     next(error);
   }
@@ -169,17 +149,42 @@ const createGroupConversation = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Mot so thanh vien khong ton tai.' });
     }
 
-    const conversation = await Conversation.create({
+    const conversation = await sequelize.transaction(async (transaction) => {
+      const created = await Conversation.create({
       type: 'group',
       name: req.body.name,
       avatar: req.body.avatar || null,
       created_by: req.user.id,
+      }, { transaction });
+
+      await ConversationMember.bulkCreate([
+        { conversation_id: created.id, user_id: req.user.id, role: 'admin' },
+        ...memberIds.map((id) => ({ conversation_id: created.id, user_id: id, role: 'member' })),
+      ], { transaction });
+      await ConversationPermission.create({ conversation_id: created.id, ...defaultPolicy() }, { transaction });
+      return created;
     });
 
-    await ConversationMember.bulkCreate([
-      { conversation_id: conversation.id, user_id: req.user.id, role: 'admin' },
-      ...memberIds.map((id) => ({ conversation_id: conversation.id, user_id: id, role: 'member' })),
-    ]);
+    if (notificationsEnabled()) {
+      for (const userId of memberIds) {
+        await createNotificationEvent({
+          userId,
+          actorUserId: req.user.id,
+          type: 'group_added',
+          category: 'group_updates',
+          tier: 'social',
+          content: `Ban da duoc them vao nhom ${conversation.name}.`,
+          title: 'Ban da duoc them vao nhom',
+          body: conversation.name,
+          relatedId: conversation.id,
+          relatedType: 'conversation',
+          conversationId: conversation.id,
+          data: { conversationId: String(conversation.id) },
+          eventKey: `group-added:${conversation.id}:recipient:${userId}`,
+        });
+        emitUserEvent(userId, 'conversation:updated', { conversationId: conversation.id });
+      }
+    }
 
     res.status(201).json({ success: true, data: await getConversationPayload(conversation.id) });
   } catch (error) {
@@ -189,21 +194,24 @@ const createGroupConversation = async (req, res, next) => {
 
 const updateConversation = async (req, res, next) => {
   try {
-    const member = await ensureMember(req.params.id, req.user.id);
-    if (!member) {
-      return res.status(404).json({ success: false, message: 'Khong tim thay cuoc tro chuyen.' });
-    }
-    if (member.role !== 'admin') {
-      return res.status(403).json({ success: false, message: 'Chi admin nhom moi co quyen cap nhat.' });
-    }
-
-    const conversation = await Conversation.findByPk(req.params.id);
-    await conversation.update({
-      name: req.body.name ?? conversation.name,
-      avatar: req.body.avatar ?? conversation.avatar,
+    const result = await sequelize.transaction(async (transaction) => {
+      const { conversation, member, members } = await lockConversationAccess(req.params.id, req.user.id, transaction);
+      if (conversation.type !== 'group') throw domainError(400, 'GROUP_ONLY', 'Chỉ áp dụng cho nhóm.');
+      if (!canMutateConversation({ conversationType: conversation.type, memberRole: member.role })) {
+        throw domainError(403, 'GROUP_ADMIN_REQUIRED', 'Chỉ quản trị viên được sửa thông tin nhóm.');
+      }
+      if (req.body.name !== undefined && (typeof req.body.name !== 'string' || !req.body.name.trim())) {
+        throw domainError(400, 'INVALID_GROUP_NAME', 'Tên nhóm không được để trống.');
+      }
+      await conversation.update({
+        name: req.body.name?.trim() ?? conversation.name,
+        avatar: req.body.avatar ?? conversation.avatar,
+      }, { transaction });
+      return { conversation, members };
     });
-
-    res.json({ success: true, data: await getConversationPayload(conversation.id), message: 'Da cap nhat chat.' });
+    result.members.forEach((member) => emitUserEvent(member.user_id, 'conversation:updated', { conversationId: result.conversation.id }));
+    const data = await getConversationPayload(result.conversation.id);
+    res.json({ success: true, data: (await decorateConversations([data], req.user.id))[0], message: 'Đã cập nhật nhóm.' });
   } catch (error) {
     next(error);
   }
@@ -229,12 +237,18 @@ const updateMyConversationSettings = async (req, res, next) => {
 
 const leaveConversation = async (req, res, next) => {
   try {
-    const member = await ensureMember(req.params.id, req.user.id);
-    if (!member) {
-      return res.status(404).json({ success: false, message: 'Khong tim thay cuoc tro chuyen.' });
-    }
-
-    await member.destroy();
+    const members = await sequelize.transaction(async (transaction) => {
+      const access = await lockConversationAccess(req.params.id, req.user.id, transaction);
+      if (access.conversation.type !== 'group') throw domainError(400, 'GROUP_ONLY', 'Chỉ có thể rời nhóm.');
+      if (isGroupOwner({ conversationType: access.conversation.type, createdBy: access.conversation.created_by, userId: req.user.id })) {
+        throw domainError(409, 'GROUP_OWNER_TRANSFER_REQUIRED', 'Nhóm trưởng chưa thể rời nhóm khi chưa chuyển quyền.');
+      }
+      await access.member.destroy({ transaction });
+      // Keep joins and sends behind the conversation lock until eviction finishes.
+      await removeUserFromConversation(req.user.id, req.params.id);
+      return access.members;
+    });
+    members.forEach((member) => emitUserEvent(member.user_id, 'conversation:updated', { conversationId: Number(req.params.id) }));
     res.json({ success: true, message: 'Da roi khoi cuoc tro chuyen.' });
   } catch (error) {
     next(error);

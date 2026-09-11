@@ -8,6 +8,7 @@ export default function KeyboardScreen({
   contentContainerStyle,
   keyboardVerticalOffset,
   extraBottomSpace = 24,
+  includeSafeTop = true,
 }) {
   const { layout } = useDevice();
 
@@ -20,7 +21,10 @@ export default function KeyboardScreen({
       <ScrollView
         contentContainerStyle={[
           styles.content,
-          { paddingBottom: layout.safeBottom + extraBottomSpace },
+          {
+            paddingTop: includeSafeTop ? layout.safeTop : 0,
+            paddingBottom: layout.safeBottom + extraBottomSpace,
+          },
           contentContainerStyle,
         ]}
         keyboardShouldPersistTaps="handled"

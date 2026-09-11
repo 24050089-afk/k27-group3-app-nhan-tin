@@ -15,6 +15,8 @@ const {
   markConversationSeen,
 } = require('../controllers/message.controller');
 const { protect } = require('../middlewares/auth.middleware');
+const { updateGroupPermissions } = require('../controllers/groupPermission.controller');
+const { listConversationMedia } = require('../controllers/conversationMedia.controller');
 const validate = require('../middlewares/validate.middleware');
 
 const router = express.Router();
@@ -37,6 +39,8 @@ router.post(
 );
 
 router.get('/:id', getConversation);
+router.get('/:id/media', listConversationMedia);
+router.patch('/:id/permissions', updateGroupPermissions);
 router.patch(
   '/:id',
   validate([

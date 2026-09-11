@@ -3,6 +3,7 @@ const { body } = require('express-validator');
 const { register, login, getMe, changePassword, forgotPassword, logout } = require('../controllers/auth.controller');
 const { protect } = require('../middlewares/auth.middleware');
 const validate = require('../middlewares/validate.middleware');
+const { validateUsername } = require('../utils/username');
 
 const router = express.Router();
 
@@ -12,6 +13,12 @@ router.post(
     body('name').notEmpty().withMessage('Tên không được để trống.'),
     body('email').isEmail().withMessage('Email không hợp lệ.'),
     body('password').isLength({ min: 6 }).withMessage('Mật khẩu tối thiểu 6 ký tự.'),
+    body('username').optional({ values: 'null' }).custom((value) => {
+      if (typeof value === 'string' && value.trim() === '') return true;
+      const result = validateUsername(value);
+      if (!result.valid) throw new Error(result.message);
+      return true;
+    }),
   ]),
   register
 );

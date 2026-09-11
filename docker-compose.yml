@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   db:
     image: mysql:8.0
@@ -31,7 +29,7 @@ services:
     container_name: lt_backend
     restart: unless-stopped
     ports:
-      - '4000:3000'
+      - '4500:3000'
     env_file:
       - ./backend/.env
     environment:
@@ -39,6 +37,11 @@ services:
       DB_PORT: 3306
       DB_NAME: lt_web
       DB_USER: appuser
+      DB_SYNC_ALTER: 'false'
+      DB_SYNC_SCHEMA: 'false'
+      GROUP_PERMISSIONS_MANAGEMENT_ENABLED: 'true'
+      NOTIFICATIONS_ENABLED: 'true'
+      PUSH_ENABLED: 'false'
     depends_on:
       db:
         condition: service_healthy

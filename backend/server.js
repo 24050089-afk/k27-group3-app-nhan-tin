@@ -12,8 +12,14 @@ async function start() {
     await sequelize.authenticate();
     console.log('Database connected.');
 
-    await sequelize.sync({ alter: true });
-    console.log('Models synchronized.');
+    const alterSchema = process.env.DB_SYNC_ALTER === 'true';
+    const syncSchema = alterSchema || process.env.DB_SYNC_SCHEMA === 'true';
+    if (syncSchema) {
+      await sequelize.sync(alterSchema ? { alter: true } : {});
+      console.log(`Models synchronized${alterSchema ? ' with alter enabled' : ' without schema alteration'}.`);
+    } else {
+      console.log('Schema synchronization disabled; use explicit migration scripts.');
+    }
 
     const server = http.createServer(app);
     const io = new Server(server, {

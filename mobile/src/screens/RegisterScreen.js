@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import BangbooMark from '../components/BangbooMark';
+import { Pressable, StyleSheet, Text } from 'react-native';
+import AuthLayout from '../components/AuthLayout';
 import Button from '../components/Button';
+import ErrorState from '../components/ErrorState';
 import Input from '../components/Input';
-import KeyboardScreen from '../components/KeyboardScreen';
 import { useAuth } from '../store/AuthContext';
 import { useTheme } from '../store/ThemeContext';
+import { spacing, touchTarget, typography } from '../theme/tokens';
 
 export default function RegisterScreen({ navigation }) {
   const { register } = useAuth();
@@ -13,13 +14,19 @@ export default function RegisterScreen({ navigation }) {
   const [form, setForm] = useState({ name: '', email: '', password: '', confirm: '' });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [serverError, setServerError] = useState('');
 
-  const set = (key) => (value) => setForm((current) => ({ ...current, [key]: value }));
+  const set = (key) => (value) => {
+    setForm((current) => ({ ...current, [key]: value }));
+    setErrors((current) => ({ ...current, [key]: undefined }));
+    setServerError('');
+  };
 
   const validate = () => {
     const next = {};
     if (!form.name.trim()) next.name = 'Nhập họ tên.';
-    if (!form.email) next.email = 'Nhập email.';
+    if (!form.email.trim()) next.email = 'Nhập email.';
+    else if (!/^\S+@\S+\.\S+$/.test(form.email.trim())) next.email = 'Email chưa đúng định dạng.';
     if (form.password.length < 6) next.password = 'Mật khẩu cần ít nhất 6 ký tự.';
     if (form.password !== form.confirm) next.confirm = 'Mật khẩu xác nhận không khớp.';
     setErrors(next);
@@ -29,47 +36,39 @@ export default function RegisterScreen({ navigation }) {
   const handleRegister = async () => {
     if (!validate()) return;
     setLoading(true);
+    setServerError('');
     try {
       await register(form.name.trim(), form.email.trim(), form.password);
     } catch (err) {
-      Alert.alert('Không thể đăng ký', `${err.message}\n\nKiểm tra thông tin hoặc kết nối rồi thử lại.`);
+      setServerError(err.message);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <KeyboardScreen style={{ backgroundColor: colors.background }} contentContainerStyle={styles.container}>
-        <View style={styles.brand}>
-          <BangbooMark size={68} label="NEW PROXY" />
-          <Text style={[styles.title, { color: colors.text }]}>Tạo tài khoản</Text>
-          <Text style={[styles.subtitle, { color: colors.textMuted }]}>Thiết lập hồ sơ để bắt đầu nhắn tin.</Text>
-        </View>
-
-        <View style={[styles.panel, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <Input label="Họ tên" value={form.name} onChangeText={set('name')} placeholder="Nguyễn Văn A" error={errors.name} autoCapitalize="words" />
-          <Input label="Email" value={form.email} onChangeText={set('email')} placeholder="example@email.com" keyboardType="email-address" error={errors.email} />
-          <Input label="Mật khẩu" value={form.password} onChangeText={set('password')} placeholder="Ít nhất 6 ký tự" secureTextEntry error={errors.password} />
-          <Input label="Xác nhận mật khẩu" value={form.confirm} onChangeText={set('confirm')} placeholder="Nhập lại mật khẩu" secureTextEntry error={errors.confirm} returnKeyType="done" onSubmitEditing={handleRegister} />
-          <Button title="Đăng ký" icon="person-add-outline" onPress={handleRegister} loading={loading} style={styles.btn} />
-        </View>
-
-        <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-          <Text style={[styles.link, { color: colors.textMuted }]}>
-            Đã có tài khoản? <Text style={{ color: colors.primary, fontWeight: '900' }}>Đăng nhập</Text>
-          </Text>
-        </TouchableOpacity>
-    </KeyboardScreen>
+    <AuthLayout
+      compact
+      title="Tạo tài khoản"
+      description="Dùng tên thật hoặc tên bạn bè dễ nhận ra trong cuộc trò chuyện."
+      footer={(
+        <Pressable style={styles.footerLink} onPress={() => navigation.navigate('Login')} accessibilityRole="button" accessibilityLabel="Quay lại đăng nhập">
+          <Text style={[styles.link, { color: colors.textMuted }]}>Đã có tài khoản? <Text style={{ color: colors.primary, fontWeight: typography.weight.bold }}>Đăng nhập</Text></Text>
+        </Pressable>
+      )}
+    >
+      {serverError ? <ErrorState compact title="Không thể tạo tài khoản" message={serverError} /> : null}
+      <Input icon="person-outline" label="Họ tên" value={form.name} onChangeText={set('name')} placeholder="Tên hiển thị của bạn" error={errors.name} autoCapitalize="words" textContentType="name" autoComplete="name" />
+      <Input icon="mail-outline" label="Email" value={form.email} onChangeText={set('email')} placeholder="ban@example.com" keyboardType="email-address" error={errors.email} textContentType="emailAddress" autoComplete="email" />
+      <Input icon="lock-closed-outline" label="Mật khẩu" value={form.password} onChangeText={set('password')} placeholder="Ít nhất 6 ký tự" secureTextEntry error={errors.password} textContentType="newPassword" autoComplete="new-password" />
+      <Input icon="checkmark-circle-outline" label="Xác nhận mật khẩu" value={form.confirm} onChangeText={set('confirm')} placeholder="Nhập lại mật khẩu" secureTextEntry error={errors.confirm} returnKeyType="done" onSubmitEditing={handleRegister} textContentType="newPassword" autoComplete="new-password" />
+      <Button title="Tạo tài khoản" icon="arrow-forward" onPress={handleRegister} loading={loading} style={styles.button} />
+    </AuthLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1 },
-  container: { flexGrow: 1, justifyContent: 'center', padding: 20 },
-  brand: { alignItems: 'center', marginBottom: 20 },
-  title: { fontSize: 28, fontWeight: '900', marginTop: 14, textAlign: 'center' },
-  subtitle: { fontSize: 15, marginTop: 6, textAlign: 'center' },
-  panel: { width: '100%', maxWidth: 480, alignSelf: 'center', paddingTop: 4 },
-  btn: { marginTop: 8 },
-  link: { textAlign: 'center', fontSize: 14, marginTop: 18 },
+  button: { marginTop: spacing.xs },
+  footerLink: { minHeight: touchTarget.compact, alignItems: 'center', justifyContent: 'center' },
+  link: { fontFamily: typography.family.body, fontSize: typography.size.bodySmall, lineHeight: typography.lineHeight.bodySmall, textAlign: 'center' },
 });

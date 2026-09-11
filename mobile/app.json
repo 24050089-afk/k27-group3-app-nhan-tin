@@ -1,17 +1,21 @@
 {
   "expo": {
-    "name": "LT Web",
-    "slug": "lt-web-mobile",
+    "name": "Proxy",
+    "description": "Proxy là ứng dụng nhắn tin dành cho trò chuyện riêng và nhóm.",
+    "slug": "proxy-mobile",
+    "scheme": "proxy",
     "version": "1.0.0",
     "orientation": "portrait",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "assetBundlePatterns": [
       "**/*"
     ],
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.ltweb.mobile",
+      "bundleIdentifier": "com.proxy.mobile",
       "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "Cho phép Proxy truy cập ảnh và video để lưu phương tiện từ cuộc trò chuyện.",
+        "NSPhotoLibraryAddUsageDescription": "Cho phép Proxy lưu ảnh và video từ cuộc trò chuyện vào thư viện thiết bị.",
         "NSAppTransportSecurity": {
           "NSAllowsLocalNetworking": true
         }
@@ -19,15 +23,28 @@
     },
     "android": {
       "softwareKeyboardLayoutMode": "resize",
+      "permissions": [
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.READ_MEDIA_VISUAL_USER_SELECTED",
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.READ_MEDIA_VIDEO",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.CAMERA",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
+      ],
       "adaptiveIcon": {
-        "backgroundColor": "#2563EB"
+        "backgroundColor": "#F4F2ED"
       },
-      "package": "com.ltweb.mobile"
+      "package": "com.proxy.mobile"
     },
     "extra": {
-      "apiPort": 4000,
+      "apiPort": 4500,
       "eas": {
-        "projectId": "your-eas-project-id"
+        "projectId": "68dfaf71-1964-4837-8347-651fcb82c966"
       }
     },
     "plugins": [
@@ -35,11 +52,56 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Cho phép LT Web truy cập thư viện ảnh để gửi ảnh trong cuộc trò chuyện.",
-          "cameraPermission": false,
-          "microphonePermission": false
+          "photosPermission": "Cho phép Proxy truy cập thư viện ảnh để gửi ảnh trong cuộc trò chuyện.",
+          "cameraPermission": "Cho phép Proxy sử dụng camera để quét mã QR kết bạn.",
+          "microphonePermission": "Cho phép Proxy sử dụng microphone để ghi và gửi tin nhắn thoại."
         }
-      ]
-    ]
+      ],
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Cho phép Proxy truy cập ảnh và video để lưu phương tiện từ cuộc trò chuyện.",
+          "savePhotosPermission": "Cho phép Proxy lưu ảnh và video từ cuộc trò chuyện vào thư viện thiết bị.",
+          "granularPermissions": [
+            "photo",
+            "video"
+          ],
+          "isAccessMediaLocationEnabled": false
+        }
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Cho phép Proxy sử dụng microphone để ghi và gửi tin nhắn thoại.",
+          "recordAudioAndroid": true
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Cho phép Proxy sử dụng camera để quét mã QR kết bạn.",
+          "barcodeScannerEnabled": true,
+          "recordAudioAndroid": false
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Cho phép Proxy dùng vị trí khi bạn bật tìm người ở gần.",
+          "isIosBackgroundLocationEnabled": false,
+          "isAndroidBackgroundLocationEnabled": false
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#286B60",
+          "sounds": []
+        }
+      ],
+      "expo-secure-store",
+      "expo-asset"
+    ],
+    "owner": "mthuan"
   }
 }

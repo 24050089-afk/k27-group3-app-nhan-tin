@@ -1,4 +1,4 @@
-# LTMB
+# Proxy
 
 Ung dung nhan tin full-stack gom backend Express/Sequelize/MySQL va mobile React Native Expo.
 

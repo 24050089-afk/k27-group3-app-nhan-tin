@@ -94,7 +94,7 @@ export default function DebugOverlay() {
         )}
       </TouchableOpacity>
 
-      <Modal visible={visible} animationType="slide" onRequestClose={() => setVisible(false)}>
+      <Modal visible={visible} animationType="fade" onRequestClose={() => setVisible(false)}>
         <SafeAreaView style={styles.modal}>
           <View style={styles.header}>
             <View style={styles.headerTextBlock}>

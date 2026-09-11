@@ -3,6 +3,12 @@ import { clearAuth, getToken } from '../utils/storage';
 import { API_BASE_URL } from '../utils/env';
 import { networkLogger } from '../utils/networkLogger';
 
+let unauthorizedHandler = null;
+
+export const setUnauthorizedHandler = (handler) => {
+  unauthorizedHandler = typeof handler === 'function' ? handler : null;
+};
+
 const client = axios.create({
   baseURL: API_BASE_URL,
   timeout: 10000,
@@ -40,7 +46,8 @@ client.interceptors.response.use(
   },
   (error) => {
     if (error.response?.status === 401) {
-      clearAuth().catch(() => {});
+      if (unauthorizedHandler) unauthorizedHandler();
+      else clearAuth().catch(() => {});
     }
 
     if (__DEV__) {
@@ -64,7 +71,12 @@ client.interceptors.response.use(
         : error.request
           ? `Không kết nối được API: ${API_BASE_URL}`
           : 'Không thể gửi yêu cầu. Vui lòng thử lại.');
-    return Promise.reject(new Error(message));
+    const normalizedError = new Error(message);
+    normalizedError.status = error.response?.status || 0;
+    normalizedError.data = error.response?.data || null;
+    normalizedError.code = error.response?.data?.code || error.code || null;
+    normalizedError.transportCode = error.code || null;
+    return Promise.reject(normalizedError);
   }
 );
 

@@ -1,11 +1,15 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '../store/ThemeContext';
+import { elevation, radius, spacing, typography } from '../theme/tokens';
 
-export default function BangbooMark({ size = 52, label }) {
+export default function ProxyMark({ size = 52, label }) {
   const { colors } = useTheme();
   const faceSize = size;
   const earSize = Math.round(size * 0.34);
+  const eyeWidth = Math.max(5, Math.round(size * 0.15));
+  const eyeHeight = Math.max(8, Math.round(size * 0.25));
+  const mouthWidth = Math.max(12, Math.round(size * 0.35));
 
   return (
     <View style={styles.wrap}>
@@ -26,11 +30,11 @@ export default function BangbooMark({ size = 52, label }) {
           },
         ]}
       >
-        <View style={styles.eyeRow}>
-          <View style={[styles.eye, { backgroundColor: colors.primary }]} />
-          <View style={[styles.eye, { backgroundColor: colors.primary }]} />
+        <View style={[styles.eyeRow, { gap: Math.round(size * 0.17), marginBottom: Math.round(size * 0.13) }]}>
+          <View style={[styles.eye, { width: eyeWidth, height: eyeHeight, backgroundColor: colors.primary }]} />
+          <View style={[styles.eye, { width: eyeWidth, height: eyeHeight, backgroundColor: colors.primary }]} />
         </View>
-        <View style={[styles.mouth, { backgroundColor: colors.accent }]} />
+        <View style={[styles.mouth, { width: mouthWidth, height: Math.max(3, Math.round(size * 0.08)), backgroundColor: colors.accent }]} />
       </View>
       {label && <Text style={[styles.label, { color: colors.text }]}>{label}</Text>}
     </View>
@@ -40,19 +44,16 @@ export default function BangbooMark({ size = 52, label }) {
 const styles = StyleSheet.create({
   wrap: { alignItems: 'center', justifyContent: 'center' },
   ears: { position: 'absolute', zIndex: 0, flexDirection: 'row', justifyContent: 'space-between' },
-  ear: { borderRadius: 999, transform: [{ rotate: '18deg' }] },
+  ear: { borderRadius: radius.round, transform: [{ rotate: '18deg' }] },
   face: {
     zIndex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 5 },
-    elevation: 3,
+    ...elevation.floating,
   },
-  eyeRow: { flexDirection: 'row', gap: 9, marginBottom: 7 },
-  eye: { width: 8, height: 13, borderRadius: 5 },
-  mouth: { width: 18, height: 4, borderRadius: 2 },
-  label: { marginTop: 6, fontSize: 11, fontWeight: '900', letterSpacing: 0 },
+  eyeRow: { flexDirection: 'row' },
+  eye: { borderRadius: radius.round },
+  mouth: { borderRadius: radius.round },
+  label: { marginTop: spacing.sm, fontFamily: typography.family.display, fontSize: typography.size.caption, fontWeight: typography.weight.heavy },
 });

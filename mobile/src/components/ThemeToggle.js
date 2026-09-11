@@ -1,46 +1,50 @@
-import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../store/ThemeContext';
+import { iconSize, motion, radius, spacing, touchTarget, typography } from '../theme/tokens';
 
 export default function ThemeToggle({ compact = false }) {
   const { colors, isDark, toggleTheme } = useTheme();
+  const progress = useRef(new Animated.Value(isDark ? 1 : 0)).current;
+
+  useEffect(() => {
+    Animated.timing(progress, { toValue: isDark ? 1 : 0, duration: motion.normal, useNativeDriver: true }).start();
+  }, [isDark, progress]);
 
   return (
-    <TouchableOpacity
+    <Pressable
       style={[
         styles.toggle,
         compact && styles.compact,
         { backgroundColor: colors.surfaceAlt, borderColor: colors.border },
       ]}
       onPress={toggleTheme}
-      activeOpacity={0.85}
       accessibilityRole="switch"
       accessibilityState={{ checked: isDark }}
-      accessibilityLabel="Giao diện tối"
+      accessibilityLabel={`Chuyển sang giao diện ${isDark ? 'sáng' : 'tối'}`}
     >
-      <Ionicons name={isDark ? 'moon' : 'sunny'} size={compact ? 17 : 18} color={isDark ? colors.primary : colors.accent} />
-      {!compact ? <Text style={[styles.label, { color: colors.text }]}>{isDark ? 'Tối' : 'Sáng'}</Text> : null}
+      <Ionicons name="contrast-outline" size={iconSize.sm} color={colors.primary} />
+      {!compact ? <Text style={[styles.label, { color: colors.text }]}>{isDark ? 'Giao diện tối' : 'Giao diện sáng'}</Text> : null}
       <View style={[styles.track, { backgroundColor: isDark ? colors.primary : colors.border }]}>
-        <View style={[styles.knob, isDark && styles.knobDark, { backgroundColor: colors.surface }]} />
+        <Animated.View style={[styles.knob, { backgroundColor: colors.surfaceRaised, transform: [{ translateX: progress.interpolate({ inputRange: [0, 1], outputRange: [0, 14] }) }] }]} />
       </View>
-    </TouchableOpacity>
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   toggle: {
-    height: 38,
-    minWidth: 112,
-    borderRadius: 10,
+    minHeight: touchTarget.compact,
+    minWidth: 154,
+    borderRadius: radius.md,
     borderWidth: 1,
-    paddingHorizontal: 10,
+    paddingHorizontal: spacing.md,
     flexDirection: 'row',
     alignItems: 'center',
   },
-  compact: { minWidth: 76, height: 40, justifyContent: 'space-between' },
-  track: { width: 34, height: 20, borderRadius: 10, padding: 2, marginLeft: 'auto' },
-  knob: { width: 16, height: 16, borderRadius: 8 },
-  knobDark: { marginLeft: 14 },
-  label: { fontSize: 13, fontWeight: '700', marginLeft: 7 },
+  compact: { minWidth: 70, minHeight: touchTarget.compact, justifyContent: 'space-between' },
+  track: { width: 34, height: 20, borderRadius: radius.round, padding: spacing.xxs, marginLeft: 'auto' },
+  knob: { width: 16, height: 16, borderRadius: radius.round },
+  label: { fontFamily: typography.family.body, fontSize: typography.size.bodySmall, fontWeight: typography.weight.semibold, marginLeft: spacing.sm },
 });

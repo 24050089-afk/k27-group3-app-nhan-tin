@@ -1,5 +1,7 @@
 const jwt = require('jsonwebtoken');
 const { User, ConversationMember } = require('./models');
+const { sequelize } = require('./models');
+const { lockConversationAccess } = require('./services/groupPermission.service');
 
 let ioInstance = null;
 
@@ -27,17 +29,25 @@ const initSocket = (io) => {
   io.on('connection', (socket) => {
     socket.join(`user:${socket.user.id}`);
 
-    socket.on('conversation:join', async ({ conversationId }) => {
-      const member = await ConversationMember.findOne({
-        where: { conversation_id: Number(conversationId), user_id: socket.user.id },
-      });
-      if (member) {
-        socket.join(`conversation:${conversationId}`);
+    socket.on('conversation:join', async (payload, acknowledge) => {
+      const conversationId = Number(payload?.conversationId);
+      const reply = (data) => { if (typeof acknowledge === 'function') acknowledge(data); };
+      if (!Number.isSafeInteger(conversationId) || conversationId < 1) return reply({ success: false });
+      try {
+        await sequelize.transaction(async (transaction) => {
+          await lockConversationAccess(conversationId, socket.user.id, transaction);
+          if (socket.connected) await socket.join(`conversation:${conversationId}`);
+        });
+        reply({ success: true });
+      } catch {
+        await socket.leave(`conversation:${conversationId}`);
+        reply({ success: false });
       }
     });
 
-    socket.on('conversation:leave', ({ conversationId }) => {
-      socket.leave(`conversation:${conversationId}`);
+    socket.on('conversation:leave', (payload) => {
+      const conversationId = Number(payload?.conversationId);
+      if (Number.isSafeInteger(conversationId)) socket.leave(`conversation:${conversationId}`);
     });
   });
 
@@ -57,9 +67,21 @@ const emitUserEvent = (userId, event, payload) => {
   ioInstance.to(`user:${userId}`).emit(event, payload);
 };
 
+const removeUserFromConversation = async (userId, conversationId) => {
+  if (!ioInstance) return;
+  try {
+    const sockets = await ioInstance.in(`user:${userId}`).fetchSockets();
+    await Promise.all(sockets.map((socket) => socket.leave(`conversation:${Number(conversationId)}`)));
+  } catch (error) {
+    ioInstance.in(`user:${userId}`).disconnectSockets(true);
+    throw error;
+  }
+};
+
 module.exports = {
   initSocket,
   getIo,
   emitConversationEvent,
   emitUserEvent,
+  removeUserFromConversation,
 };

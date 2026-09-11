@@ -1,4 +1,6 @@
-# Database schema hiện tại — LTMB
+# Database schema hiện tại — Proxy
+
+> Bổ sung mã ngày 2026-09-07. G13 bổ sung 15 boolean policy columns (5 member legacy + 5 admin + 5 owner), version INTEGER và timestamps trong `conversation_permissions`; migration live vẫn cần rollout checkpoint riêng. Group có một policy; private không có. Migration prepare/backfill/finalize và kiểm tra owner invariant: [hướng dẫn phân quyền nhóm](../../features/group-permissions.md).
 
 > Tài liệu bàn giao cho agent. Nguồn sự thật là `backend/src/models/*.model.js` và `backend/src/models/index.js`. Nội dung này mô tả schema Sequelize đang có trong code, không phải schema dự kiến.
 
@@ -26,6 +28,7 @@ Password: apppassword
 
 ```text
 users
+├─< products ─< order_items >─ orders >─ users
 ├─< friendships (user_id / friend_id) >─ users
 ├─< blocked_users (user_id / blocked_user_id) >─ users
 ├─< conversation_members >─ conversations >─ users (created_by)
@@ -33,6 +36,8 @@ users
 ├─< message_statuses
 ├─< reactions
 └─< notifications
+
+users ──1:1── user_nearby_discovery (temporary foreground discovery session)
 
 conversations ─< messages
 messages ─┬─< attachments
@@ -52,10 +57,11 @@ Model: `backend/src/models/user.model.js`. Lưu tài khoản, profile và trạn
 | Cột | Kiểu | Null/default | Ràng buộc hoặc ý nghĩa |
 |---|---|---|---|
 | `id` | INTEGER | NOT NULL | PK, auto increment |
+| `uid` | VARCHAR(15) | NOT NULL | UNIQUE; mã công khai bất biến dạng `LT-XXXXXXXXXXXX` |
 | `name` | VARCHAR(100) | NOT NULL | Tên hiển thị |
 | `email` | VARCHAR(150) | NOT NULL | UNIQUE, validate email |
 | `phone` | VARCHAR(30) | NULL | UNIQUE |
-| `username` | VARCHAR(60) | NULL | UNIQUE |
+| `username` | VARCHAR(60) | NULL | UNIQUE; application chỉ nhận canonical lowercase dài 3–30 ký tự |
 | `password` | VARCHAR(255) | NOT NULL | bcrypt hash; bị loại khỏi `toJSON()` |
 | `avatar` | VARCHAR(255) | NULL | URL ảnh đại diện |
 | `role` | ENUM(`user`,`admin`) | default `user` | Phân quyền |
@@ -64,6 +70,52 @@ Model: `backend/src/models/user.model.js`. Lưu tài khoản, profile và trạn
 | `is_online` | BOOLEAN | default `false` | Trạng thái realtime |
 
 Password được hash ở hook `beforeCreate` và khi password thay đổi trong `beforeUpdate`.
+
+`uid` không thay thế `id` trong khóa ngoại. UID được backend sinh bằng nguồn ngẫu nhiên mật mã và không nhận từ client. Database hiện hữu phải chạy lần lượt `identity:migrate:prepare`, `identity:backfill`, `identity:migrate:finalize` trước khi khởi động code model mới; không dùng `sync({ alter: true })` cho thay đổi này.
+
+### `products`
+
+Model: `product.model.js`. Sản phẩm thuộc một user.
+
+| Cột | Kiểu | Null/default | Quan hệ hoặc ý nghĩa |
+|---|---|---|---|
+| `id` | INTEGER | NOT NULL | PK |
+| `name` | VARCHAR(200) | NOT NULL | Tên sản phẩm |
+| `description` | TEXT | NULL | Mô tả |
+| `price` | DECIMAL(10,2) | default `0` | Giá hiện tại |
+| `stock` | INTEGER | default `0` | Tồn kho |
+| `image_url` | VARCHAR(255) | NULL | Ảnh sản phẩm |
+| `user_id` | INTEGER | NOT NULL | FK → `users.id`, alias `owner` |
+
+### `orders`
+
+Model: `order.model.js`. Đơn hàng và snapshot thông tin giao nhận.
+
+| Cột | Kiểu | Null/default | Quan hệ hoặc ý nghĩa |
+|---|---|---|---|
+| `id` | INTEGER | NOT NULL | PK |
+| `user_id` | INTEGER | NOT NULL | FK → `users.id`, alias `customer` |
+| `status` | ENUM(`pending`,`confirmed`,`shipping`,`completed`,`cancelled`) | default `pending` | Trạng thái đơn |
+| `total_amount` | DECIMAL(10,2) | default `0` | Server tính từ các dòng hàng |
+| `customer_name` | VARCHAR(100) | NOT NULL | Người nhận |
+| `phone` | VARCHAR(20) | NOT NULL | SĐT nhận hàng |
+| `address` | VARCHAR(255) | NOT NULL | Địa chỉ giao hàng |
+| `note` | TEXT | NULL | Ghi chú |
+
+### `order_items`
+
+Model: `orderItem.model.js`. Dòng hàng và snapshot sản phẩm tại lúc mua.
+
+| Cột | Kiểu | Null/default | Quan hệ hoặc ý nghĩa |
+|---|---|---|---|
+| `id` | INTEGER | NOT NULL | PK |
+| `order_id` | INTEGER | NOT NULL | FK → `orders.id`, alias `order` |
+| `product_id` | INTEGER | NOT NULL | FK → `products.id`, alias `product` |
+| `product_name` | VARCHAR(200) | NOT NULL | Snapshot tên |
+| `product_image_url` | VARCHAR(255) | NULL | Snapshot ảnh |
+| `unit_price` | DECIMAL(10,2) | default `0` | Snapshot đơn giá |
+| `quantity` | INTEGER | default `1` | Số lượng |
+| `line_total` | DECIMAL(10,2) | default `0` | `unit_price × quantity` |
 
 ### `friendships`
 
@@ -89,6 +141,22 @@ Model: `blockedUser.model.js`. Quan hệ user chặn một user khác.
 | `blocked_user_id` | INTEGER | NOT NULL | FK → `users.id`, alias `blockedUser` |
 
 Unique index: (`user_id`, `blocked_user_id`).
+
+### `user_nearby_discovery`
+
+Model: `backend/src/models/userNearbyDiscovery.model.js`. Phiên khám phá gần đây tạm thời, mỗi user tối đa một dòng; không lưu lịch sử vị trí.
+
+| Cột | Kiểu | Null/default | Ràng buộc hoặc ý nghĩa |
+|---|---|---|---|
+| `id` | INTEGER | NOT NULL | PK, auto increment |
+| `user_id` | INTEGER | NOT NULL | FK → `users.id`, unique |
+| `location_point` | POINT SRID 4326 | NOT NULL | Tọa độ đã lượng tử hóa; chỉ dùng cho tìm nearby |
+| `accuracy_m` | INTEGER | NOT NULL | Độ chính xác tại thời điểm cập nhật |
+| `location_updated_at` | DATETIME | NOT NULL | Lần cập nhật gần nhất |
+| `expires_at` | DATETIME | NOT NULL | Hết hạn sau 30 phút |
+
+Indexes: `user_nearby_discovery_user_unique`, `user_nearby_discovery_expires_idx`, `user_nearby_discovery_location_spatial`.
+Migration: `backend/scripts/migrate-nearby-discovery.js`; không bật background location và không trả tọa độ chính xác cho client.
 
 ### `conversations`
 
@@ -186,10 +254,17 @@ Model: `notification.model.js`. Thông báo hệ thống cho user.
 | `related_id` | INTEGER | NULL | ID thực thể liên quan; không có FK đa hình |
 | `read` | BOOLEAN | default `false` | Đã đọc |
 
+Notification migration (`backend/scripts/migrate-notifications.js`) mở rộng bảng này với actor, category/tier, conversation/message linkage, structured payload, idempotency/event key, collapse key, aggregate count, `read_at` và `expires_at`. Các bảng mới `push_devices`, `notification_preferences`, `notification_threads` và `notification_outbox` được tạo qua migration; production không phụ thuộc `sequelize.sync()`.
+
 ## 4. Alias Sequelize cần dùng đúng
 
 | Từ model | Association alias |
 |---|---|
+| `User → Product` | `products` |
+| `Product → User` | `owner` |
+| `User → Order` | `orders` |
+| `Order → User` | `customer` |
+| `Order → OrderItem` | `items` |
 | `Friendship → User` | `requester`, `recipient` |
 | `BlockedUser → User` | `blocker`, `blockedUser` |
 | `Conversation → User` | `creator` |
@@ -215,5 +290,7 @@ Sai alias trong `include` sẽ làm Sequelize báo association error dù FK tồ
 
 ## 6. Nhật ký tài liệu
 
-- 2026-07-13: sau khi xác nhận đã backup, đã drop an toàn `order_items`, `orders`, `products` khỏi database `lt_web`; schema thực tế còn 10 bảng phục vụ auth/messaging.
+- 2026-08-13: chạy migration notification trên Docker MySQL sau khi dừng backend và xác minh backup `migration-backups/lt_web_before_notifications_20260813_191404.sql` (SHA-256 `DBAD51B233B1465BC8E35F5483A66CEF93F7945018879CC4F2FC74ED2A53C1AD`). Mở rộng `notifications`, tạo `push_devices`, `notification_preferences`, `notification_threads`, `notification_outbox`; backfill 85 rows không có bản ghi thiếu hoặc duplicate event key. Backend bật inbox bằng `NOTIFICATIONS_ENABLED=true`; `PUSH_ENABLED=false`.
+- 2026-08-02: đã chạy migration UID trên database Docker hiện hành; backfill 8/8 tài khoản, khóa `uid` thành `NOT NULL UNIQUE`, xác minh 0 null/trùng/sai định dạng. Dọn 60 unique index một-cột trùng lặp do lịch sử `sync({ alter: true })`, giữ các index canonical và `users_uid_unique`.
+- 2026-08-02: bổ sung public UID bất biến và giới hạn username 30 ký tự; thêm quy trình migration/backfill theo giai đoạn.
 - 2026-07-13: đối chiếu lại toàn bộ 13 Sequelize model và associations; thay template/spec cũ bằng bản đồ database hiện hành cho agent.

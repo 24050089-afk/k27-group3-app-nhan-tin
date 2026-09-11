@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../store/ThemeContext';
+import { iconSize, radius, spacing, touchTarget, typography } from '../theme/tokens';
 
 export default function Input({
   label,
@@ -14,6 +15,10 @@ export default function Input({
   autoCapitalize = 'none',
   returnKeyType,
   onSubmitEditing,
+  textContentType,
+  autoComplete,
+  icon,
+  ...textInputProps
 }) {
   const { colors } = useTheme();
   const [visible, setVisible] = useState(false);
@@ -26,11 +31,12 @@ export default function Input({
         style={[
           styles.inputRow,
           {
-            backgroundColor: colors.surfaceAlt,
+            backgroundColor: focused ? colors.surface : colors.surfaceAlt,
             borderColor: error ? colors.danger : focused ? colors.primary : colors.border,
           },
         ]}
       >
+        {icon ? <Ionicons name={icon} size={iconSize.sm} color={focused ? colors.primary : colors.textMuted} style={styles.leadingIcon} /> : null}
         <TextInput
           style={[styles.input, { color: colors.text }]}
           value={value}
@@ -42,18 +48,22 @@ export default function Input({
           autoCapitalize={autoCapitalize}
           returnKeyType={returnKeyType}
           onSubmitEditing={onSubmitEditing}
+          textContentType={textContentType}
+          autoComplete={autoComplete}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
           accessibilityLabel={label}
+          {...textInputProps}
         />
         {secureTextEntry && (
           <TouchableOpacity
             onPress={() => setVisible((v) => !v)}
             style={styles.eyeBtn}
+            activeOpacity={0.72}
             accessibilityRole="button"
             accessibilityLabel={visible ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
           >
-            <Ionicons name={visible ? 'eye-off-outline' : 'eye-outline'} size={21} color={colors.textMuted} />
+            <Ionicons name={visible ? 'eye-off-outline' : 'eye-outline'} size={iconSize.md} color={colors.textMuted} />
           </TouchableOpacity>
         )}
       </View>
@@ -63,17 +73,18 @@ export default function Input({
 }
 
 const styles = StyleSheet.create({
-  wrapper: { marginBottom: 14 },
-  label: { fontSize: 14, fontWeight: '700', marginBottom: 7 },
+  wrapper: { marginBottom: spacing.lg },
+  label: { fontFamily: typography.family.body, fontSize: typography.size.bodySmall, fontWeight: typography.weight.semibold, marginBottom: spacing.sm },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    height: 50,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    minHeight: touchTarget.comfortable,
   },
-  input: { flex: 1, fontSize: 15 },
-  eyeBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
-  error: { fontSize: 12, marginTop: 5, lineHeight: 17 },
+  input: { flex: 1, fontFamily: typography.family.body, fontSize: typography.size.input, lineHeight: typography.lineHeight.input, paddingVertical: spacing.md },
+  leadingIcon: { marginRight: spacing.sm },
+  eyeBtn: { width: touchTarget.compact, height: touchTarget.compact, alignItems: 'center', justifyContent: 'center', marginRight: -spacing.sm },
+  error: { fontFamily: typography.family.body, fontSize: typography.size.caption, marginTop: spacing.xs, lineHeight: typography.lineHeight.caption },
 });

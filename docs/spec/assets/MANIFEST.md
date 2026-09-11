@@ -5,9 +5,10 @@ App hien khong phu thuoc asset bitmap bundled cho luong chinh.
 | Loai | Nguon | Dung o |
 |---|---|---|
 | Icon | `@expo/vector-icons` Ionicons | Navigation, button, empty/error state |
-| Bangboo mark | Component `mobile/src/components/BangbooMark.js` | Auth, profile, empty state |
-| Avatar | URL user hoac chu cai fallback trong `Avatar.js` | Chat list, friends |
+| Proxy mark | Component `mobile/src/components/ProxyMark.js` | Auth, profile, empty state |
+| Avatar | URL user hoac chu cai fallback trong `Avatar.js` | Chat list, friends, notes tray |
 | Anh chat | URL tra ve tu `/api/upload/chat-image` | `MessageBubble` |
+| Notes | Khong co asset rieng; dung Avatar + Ionicons | `NotesTray`, `NoteComposerSheet`, `NoteViewerModal` |
 
 ## Quy Tac Them Asset
 

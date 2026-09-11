@@ -2,10 +2,12 @@ import client from './client';
 
 export const getConversationsApi = () => client.get('/conversations');
 export const getConversationApi = (id) => client.get(`/conversations/${id}`);
+export const getConversationMediaApi = (id, params) => client.get(`/conversations/${id}/media`, { params });
 export const createPrivateConversationApi = (friendId) =>
   client.post('/conversations/private', { friend_id: friendId });
 export const createGroupConversationApi = (data) => client.post('/conversations/groups', data);
 export const updateConversationApi = (id, data) => client.patch(`/conversations/${id}`, data);
+export const updateGroupPermissionsApi = (id, data) => client.patch(`/conversations/${id}/permissions`, data);
 export const updateConversationSettingsApi = (id, data) =>
   client.patch(`/conversations/${id}/settings`, data);
 export const leaveConversationApi = (id) => client.delete(`/conversations/${id}/members/me`);

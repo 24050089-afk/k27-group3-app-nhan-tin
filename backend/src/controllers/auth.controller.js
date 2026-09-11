@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const { User } = require('../models');
+const { createUserWithIdentity } = require('../services/userIdentity.service');
 
 const signToken = (id) =>
   jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -10,15 +11,17 @@ const register = async (req, res, next) => {
   try {
     const { name, email, password, phone, username } = req.body;
 
-    const existing = await User.findOne({ where: { email } });
-    if (existing) {
-      return res.status(409).json({ success: false, message: 'Email đã được sử dụng.' });
-    }
-
-    const user = await User.create({ name, email, password, phone, username, is_online: true });
+    const user = await createUserWithIdentity({
+      name,
+      email,
+      password,
+      phone,
+      username,
+      is_online: true,
+    });
     const token = signToken(user.id);
 
-    res.status(201).json({ success: true, data: { user, token } });
+    res.status(201).json({ success: true, data: { user: user.toSelfJSON(), token } });
   } catch (error) {
     next(error);
   }
@@ -37,9 +40,12 @@ const login = async (req, res, next) => {
       return res.status(401).json({ success: false, message: 'Email hoặc mật khẩu không đúng.' });
     }
 
-    await rawUser.update({ is_online: true, last_seen_at: new Date() });
+    await rawUser.update({
+      is_online: rawUser.show_activity_status !== false,
+      last_seen_at: rawUser.show_activity_status !== false ? new Date() : null,
+    });
     const token = signToken(rawUser.id);
-    const userJSON = rawUser.toJSON();
+    const userJSON = rawUser.toSelfJSON();
 
     res.json({ success: true, data: { user: userJSON, token } });
   } catch (error) {
@@ -48,7 +54,7 @@ const login = async (req, res, next) => {
 };
 
 const getMe = async (req, res) => {
-  res.json({ success: true, data: { user: req.user } });
+  res.json({ success: true, data: { user: req.user.toSelfJSON() } });
 };
 
 const changePassword = async (req, res, next) => {
@@ -94,7 +100,10 @@ const forgotPassword = async (req, res, next) => {
 
 const logout = async (req, res, next) => {
   try {
-    await req.user.update({ is_online: false, last_seen_at: new Date() });
+    await req.user.update({
+      is_online: false,
+      last_seen_at: req.user.show_activity_status === false ? null : new Date(),
+    });
     res.json({ success: true, message: 'Da dang xuat.' });
   } catch (error) {
     next(error);

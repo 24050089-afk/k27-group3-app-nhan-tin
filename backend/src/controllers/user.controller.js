@@ -1,4 +1,8 @@
 const { User } = require('../models');
+const {
+  updateUserProfile,
+  getUsernameAvailability: resolveUsernameAvailability,
+} = require('../services/userIdentity.service');
 
 const getAll = async (req, res, next) => {
   try {
@@ -23,12 +27,19 @@ const getById = async (req, res, next) => {
 
 const updateProfile = async (req, res, next) => {
   try {
-    const { name, avatar, phone, username, bio } = req.body;
     const user = await User.findByPk(req.user.id);
+    await updateUserProfile(user, req.body);
 
-    await user.update({ name, avatar, phone, username, bio });
+    res.json({ success: true, data: user.toSelfJSON(), message: 'Cập nhật thành công.' });
+  } catch (error) {
+    next(error);
+  }
+};
 
-    res.json({ success: true, data: user, message: 'Cập nhật thành công.' });
+const getUsernameAvailability = async (req, res, next) => {
+  try {
+    const data = await resolveUsernameAvailability(req.query.username, req.user.id);
+    res.json({ success: true, data });
   } catch (error) {
     next(error);
   }
@@ -48,4 +59,4 @@ const deleteUser = async (req, res, next) => {
   }
 };
 
-module.exports = { getAll, getById, updateProfile, deleteUser };
+module.exports = { getAll, getById, getUsernameAvailability, updateProfile, deleteUser };

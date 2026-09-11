@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Dimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { layout as layoutTokens, spacing } from '../theme/tokens';
 
 const DeviceContext = createContext(null);
 
@@ -58,10 +59,10 @@ export function DeviceProvider({ children }) {
     customTabBarH: insets.bottom + 49,
 
     // Padding mặc định cho ScrollView / FlatList
-    contentPaddingBottom: insets.bottom + 16,
+    contentPaddingBottom: insets.bottom + spacing.lg,
 
     // Padding ngang theo nhóm thiết bị
-    screenPaddingH: device.isSmall ? 12 : device.isXLarge ? 24 : 16,
+    screenPaddingH: device.isSmall ? layoutTokens.screenPaddingSmall : device.isXLarge ? spacing.xxl : layoutTokens.screenPadding,
   };
 
   return (

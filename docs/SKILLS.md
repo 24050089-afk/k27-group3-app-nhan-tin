@@ -1,4 +1,4 @@
-# Danh Sách Kỹ Năng — LT Web
+# Danh Sách Kỹ Năng — Proxy
 
 > File này là cổng vào hệ thống kỹ năng. Đọc file này trước khi thực hiện bất kỳ thao tác nào với codebase.
 
@@ -67,6 +67,10 @@ Bao gồm: khởi chạy Expo, Expo Go, debug tools, Fast Refresh, API URL auto-
 #### Tôi cần hiểu tính năng Messaging
 → Đọc: [features/messaging.md](features/messaging.md)
 Bao gồm: social, conversation, message, realtime, seen, reaction và upload ảnh.
+
+#### Tôi cần hiểu tính năng Notes / Tin ghi chú
+→ Đọc: [features/notes.md](features/notes.md)
+Bao gồm: note 24h, audience bạn bè/custom, viewer count, realtime refresh và reply nhanh vào DM.
 
 #### Tôi cần kiểm tra bảo mật trước khi viết endpoint mới
 → Đọc: [skills/security-checklist.md](skills/security-checklist.md)  

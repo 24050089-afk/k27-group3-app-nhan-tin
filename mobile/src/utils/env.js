@@ -2,7 +2,7 @@ import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 
 const PRODUCTION_API_URL = 'https://your-production-api.com/api';
-const DEFAULT_BACKEND_PORT = 4000;
+const DEFAULT_BACKEND_PORT = 4500;
 
 function parseNumericPort(value) {
   const port = Number(value);

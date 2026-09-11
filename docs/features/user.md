@@ -79,7 +79,7 @@ Response: { success: true, data: User }
 ```
 PATCH /api/users/me
 Header: Authorization: Bearer <token>
-Body: { name?, avatar? }
+Body: { name?, avatar?, phone?, username?, bio? }
 ```
 
 ### Chuỗi file
@@ -90,7 +90,8 @@ user.router.js
   ▼
 user.controller.js → updateProfile()
   │  User.findByPk(req.user.id)
-  │  user.update({ name, avatar })
+  │  userIdentity.service whitelist + normalize username
+  │  user.update(changed fields only)
   ▼
 Response: { success: true, data: User, message: "Cập nhật thành công." }
 ```
@@ -98,7 +99,28 @@ Response: { success: true, data: User, message: "Cập nhật thành công." }
 ### Bảo mật
 - [x] `protect` — chỉ user đang đăng nhập mới cập nhật được chính mình
 - [x] Lấy ID từ `req.user.id` (JWT đã verify) — không nhận id từ body/params
-- [x] Chỉ cho phép update `name` và `avatar`, không cho update `email`, `password`, `role`
+- [x] Chỉ cho phép `name`, `avatar`, `phone`, `username`, `bio`; không cho update `uid`, `id`, `email`, `password`, `role`
+- [x] Username canonical lowercase, 3–30 ký tự; unique conflict trả 409
+
+---
+
+## Public UID và kết bạn bằng QR
+
+- Mỗi tài khoản có `uid` dạng `LT-XXXXXXXXXXXX`, backend tự sinh và không cho thay đổi.
+- `GET /api/users/username-availability` hỗ trợ UX nhưng không giữ chỗ username.
+- `POST /api/social/qr/resolve` nhận `{ version: 1, uid }` và trả public allowlist cùng relationship.
+- QR canonical: `proxy://friend/{UID}?v=1`; không chứa email, phone, JWT hoặc ID tuần tự.
+- Resolver không tự tạo friendship/conversation. Mobile tái sử dụng API gửi/chấp nhận lời mời và private conversation hiện có.
+- Migration database chạy theo thứ tự:
+
+```text
+npm run identity:migrate:prepare
+npm run identity:backfill
+npm run identity:migrate:finalize
+npm run identity:migrate:status
+```
+
+Phải backup, tạm dừng các thao tác ghi `users`, chạy đủ migration rồi mới restart backend dùng model có cột `uid`.
 
 ---
 
@@ -138,6 +160,14 @@ backend/src/models/user.model.js
 backend/src/middlewares/auth.middleware.js       ← protect + adminOnly
 backend/src/middlewares/validate.middleware.js
 backend/src/middlewares/error.middleware.js
+backend/src/services/userIdentity.service.js
+backend/src/services/friendQr.service.js
+backend/src/utils/publicUid.js
+backend/src/utils/username.js
+backend/migrations/202608020001-add-public-uid-to-users.js
+backend/migrations/202608020002-enforce-public-uid-on-users.js
+backend/scripts/migrate-user-identities.js
+backend/scripts/backfill-user-uids.js
 ```
 
 ## Schema Model User
@@ -145,10 +175,12 @@ backend/src/middlewares/error.middleware.js
 ```js
 {
   id:       INTEGER   PK AUTO_INCREMENT
+  uid:      STRING(15) UNIQUE NOT NULL [public, immutable]
   name:     STRING(100)   NOT NULL
   email:    STRING(150)   UNIQUE NOT NULL
   password: STRING         NOT NULL  [hash bcryptjs, luôn bị ẩn khỏi response]
   avatar:   STRING         NULLABLE
+  username: STRING(30) UNIQUE NULLABLE
   role:     ENUM('user','admin')  DEFAULT 'user'
   created_at, updated_at
 }
