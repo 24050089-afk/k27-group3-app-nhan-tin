@@ -36,6 +36,5 @@ API development duoc expose tai port `4000`; mobile tu resolve LAN host cua Expo
 - `docs/spec/data/api.md`: API contracts.
 - `docs/spec/data/schema.md`: Sequelize schema.
 - `docs/features/messaging.md`: trace messaging.
-- `docs/AGENTS.md`: quy tac lam viec.
 
 Code commerce cu da duoc go khoi runtime. Cac bang MySQL cu, neu con, khong bi drop tu dong va can migration/backup rieng de xoa.

@@ -1,6 +1,6 @@
 # Tổng quan và bàn giao ứng dụng Proxy
 
-> Cập nhật 2026-09-08: nhánh [Cài đặt và quyền nhóm](features/group-permissions.md) đã có hai màn `GroupSettings`/`GroupPermissions`, policy theo role owner/admin/member, transaction enforcement và realtime refresh. G13 đã local-verified bằng unit/integration/export; native/device QA và live rollout còn pending. Trạng thái tổng thể xem [Plan M9](Plan.md#m9-quyết-định-và-bàn-giao-cho-phiên-ai-tiếp-theo).
+> Cập nhật 2026-09-08: nhánh [Cài đặt và quyền nhóm](features/group-permissions.md) đã có hai màn `GroupSettings`/`GroupPermissions`, policy theo role owner/admin/member, transaction enforcement và realtime refresh. G13 đã local-verified bằng unit/integration/export; native/device QA và live rollout còn pending. Trạng thái tổng thể xem [Plan M9](Plan.md#m9-quyết-định-và-bàn-giao).
 
 > Phạm vi kiểm tra: working tree ngày 19/07/2026. Tài liệu này lấy code đang được import, mount và gọi ở runtime làm nguồn sự thật; tài liệu cũ chỉ được dùng để phát hiện mâu thuẫn. Không có logic ứng dụng nào được sửa trong lần phân tích này.
 

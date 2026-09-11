@@ -35,7 +35,7 @@ Checks: |
   PASS — đối chiếu tên biến với metadata hai container healthy, chỉ xuất trạng thái khớp; không xuất giá trị.
   PASS — scan chữ ký token/private key phổ biến ngoài node_modules không phát hiện mẫu tương ứng; đây không phải chứng minh không còn secret khác.
 Kết luận GATE-SAFE: chưa đạt — xác nhận incident credential active đã được commit và hiện diện trên origin/main.
-Files: backend/.env, mobile/.env, docker-compose.yml, CLAUDE.md, MO_TA_KY_THUAT.md, docs/checkpoints/progress.md
+Files: backend/.env, mobile/.env, docker-compose.yml, MO_TA_KY_THUAT.md, docs/checkpoints/progress.md
 Limits/next: Dừng SEC-01; cần human checkpoint để chốt containment/rotation cho DB_PASSWORD, MYSQL_PASSWORD, MYSQL_ROOT_PASSWORD và JWT_SECRET, đánh giá session/token hiện hành và phạm vi người có quyền đọc remote. Chưa mở REP-01 và chưa rewrite history/push.
 ```
 

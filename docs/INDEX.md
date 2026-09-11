@@ -60,7 +60,6 @@ Global providers: `SafeAreaProvider`, `AuthProvider`, `DeviceProvider`, `ThemePr
 - UI/UX: `docs/Uiux rules.md`
 - Friend discovery trace: `docs/features/friend-discovery.md`
 - Notification trace: `docs/features/notifications.md`
-- Quy tac agent: `docs/AGENTS.md`
 
 ## Lich Su Don Dep
 

@@ -63,7 +63,7 @@ Không còn dùng các giả định cũ “chưa có bảng policy”, “chưa
 - Thuật ngữ cờ: **cờ quản lý chung** là biến môi trường cấp server `GROUP_PERMISSIONS_MANAGEMENT_ENABLED`; **cờ mở quản lý video** dự kiến của VID-01 là biến môi trường cấp server độc lập `GROUP_VIDEO_PERMISSION_MANAGEMENT_ENABLED`. Cả hai áp dụng cho toàn backend instance, không phải per-group hoặc cohort flag.
 - Hai lần sửa cùng lỗi thất bại: dừng cách tiếp cận, ghi giả thuyết đã loại bỏ và dùng review/ngữ cảnh mới.
 - Task size S/M do một model làm trọn từ khảo sát đến kiểm tra. Chỉ dùng phân vai matrix/implement/review cho task L/XL có race, DB, security, native hoặc nghiệm thu nhiều hệ thống; reviewer độc lập vẫn bắt buộc khi mức rủi ro yêu cầu V4.
-- Chỉ phân công song song khi công việc độc lập và có giá trị; không để hai agent sửa cùng file. Không tạo nhiều vai chỉ để đáp ứng tên model hoặc kích thước ước lượng.
+- Chỉ phân công song song khi công việc độc lập và có giá trị; không để hai người sửa cùng file. Không tạo nhiều vai chỉ để đáp ứng hình thức hoặc kích thước ước lượng.
 - Task S/M ghi một block ngắn vào `docs/checkpoints/progress.md` khi hoàn tất hoặc bị chặn. Task L/XL chỉ dùng checkpoint riêng khi cần chống mất ngữ cảnh hoặc điều phối nhiều vai; các checkpoint UX-02 được giữ làm evidence lịch sử, không làm mẫu mặc định.
 - Cập nhật `Plan.md` một lần sau khi hoàn tất hoặc đổi phạm vi cả lô; kết quả giữa lô đi vào checkpoint chung. Ngoại lệ là finding làm sai dependency, gate, dữ liệu live hoặc phạm vi phát hành và cần sửa Plan ngay.
 - Mỗi kết quả vẫn ghi task, thay đổi, kiểm tra thực tế, finding và bước kế tiếp; không ghi secret, token, nội dung chat hoặc vị trí.
@@ -363,7 +363,7 @@ Triển khai theo giai đoạn: rehearsal cô lập → schema/backfill kiểm c
 
 Trước release cần baseline/ngưỡng định lượng cho 5xx, send failure, permission denied, conflict, missing policy, worker retry theo flag và crash/recorder; ghi cửa sổ quan sát/người xử lý. Bypass, mất dữ liệu, missing policy hoặc credential lộ chặn mở rộng rollout. Không tự đặt ngưỡng thành cam kết production khi chưa đo.
 
-## M9. Quyết định và bàn giao cho phiên AI tiếp theo
+## M9. Quyết định và bàn giao
 
 ### M9.1 Quyết định hiện hành
 

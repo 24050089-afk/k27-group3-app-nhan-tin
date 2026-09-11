@@ -1,7 +1,6 @@
 # UX Rules
 
 > Bỏ vào đây: quy tắc trải nghiệm người dùng áp dụng toàn app.  
-> AI đọc file này để đảm bảo mọi screen đều nhất quán về UX.
 
 ---
 
